@@ -1,60 +1,54 @@
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Camera OCR (Hebrew + English) with Speech</title>
-  <link rel="stylesheet" href="styles.css" />
-  <script src="https://unpkg.com/tesseract.js@v2.1.5/dist/tesseract.min.js"></script>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Object Finder + OCR (HE/EN)</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="container">
-    <header>
-      <h1>Live Camera OCR — Hebrew + English</h1>
-      <p>Tap “Start Camera” to grant permission, then capture text and hear it aloud.</p>
-    </header>
+  <header>Object Finder + OCR (Hebrew & English)</header>
+  <div id="app">
+    <div class="video-wrap">
+      <video id="video" playsinline muted></video>
+      <canvas id="overlay"></canvas>
+    </div>
 
-    <section class="controls">
-      <button id="startCameraBtn" class="primary">Start Camera</button>
-      <video id="video" autoplay playsinline muted hidden></video>
+    <div class="controls">
+      <button id="startBtn">Start Camera</button>
+      <button id="torchBtn" disabled>Toggle Torch</button>
+      <button id="modeBtn">Mode: Object</button>
+      <button id="captureBtn" disabled>Capture Text</button>
+      <select id="langSelect" title="Speech language">
+        <option value="auto" selected>Speech: Auto</option>
+        <option value="en">Speech: English</option>
+        <option value="he">Speech: Hebrew</option>
+      </select>
+      <button id="speakBtn" disabled>Speak Last Text</button>
+    </div>
 
-      <div class="lang-select">
-        <label><input type="checkbox" name="lang" value="heb" checked /> Hebrew</label>
-        <label><input type="checkbox" name="lang" value="eng" checked /> English</label>
+    <div class="row">
+      <div>
+        <strong>Detected Objects</strong>
+        <div id="objects" class="mono"></div>
       </div>
-
-      <button id="captureBtn" class="primary" hidden>Capture & OCR</button>
-
-      <div class="progress-wrap" id="progressWrap" hidden>
-        <div class="progress-bar" id="progressBar"></div>
-        <div class="progress-text" id="progressText">Preparing…</div>
+      <div>
+        <strong>Recognized Text</strong>
+        <div id="ocrText" class="mono"></div>
       </div>
-    </section>
+    </div>
 
-    <section class="output">
-      <h2>Extracted text</h2>
-      <div class="output-actions">
-        <button id="copyBtn">Copy</button>
-        <button id="clearBtn">Clear</button>
-        <button id="speakBtn">Speak</button>
-        <label class="dir-toggle">
-          Direction:
-          <select id="dirSelect">
-            <option value="auto" selected>Auto</option>
-            <option value="rtl">RTL</option>
-            <option value="ltr">LTR</option>
-          </select>
-        </label>
-      </div>
-      <textarea id="output" placeholder="OCR text will appear here…" dir="auto"></textarea>
-    </section>
+    <div id="log" class="mono"></div>
+  </div>
 
-    <footer>
-      <small>Tip: Hold the camera steady and ensure good lighting for best OCR results.</small>
-    </footer>
-  </main>
+  <!-- TensorFlow.js + COCO-SSD -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.19.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
 
-  <canvas id="canvas" style="display:none;"></canvas>
-  <script src="app.js" defer></script>
+  <!-- Tesseract.js -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+
+  <!-- App logic -->
+  <script src="app.js"></script>
 </body>
 </html>
