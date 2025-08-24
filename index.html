@@ -2,59 +2,59 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Object Detection + Tap-to-OCR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Beep on detection (step 1)</title>
   <style>
+    :root { color-scheme: dark; }
     body {
       margin: 0;
       background: #000;
+      color: #fff;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       overflow: hidden;
-      color: white;
-      font-family: sans-serif;
-      text-align: center;
     }
     #video, #overlay {
       position: absolute;
-      top: 0;
-      left: 0;
-    }
-    #ocrText {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: rgba(0,0,0,0.7);
-      padding: 10px;
-      font-size: 14px;
-      white-space: pre-wrap;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
     }
     #startBtn {
       position: fixed;
-      top: 50%;
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      padding: 15px 25px;
+      padding: 14px 22px;
       font-size: 18px;
-      background: #00ff00;
-      color: black;
+      background: #00ff7f;
+      color: #000;
       border: none;
+      border-radius: 8px;
       cursor: pointer;
       z-index: 10;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    #hint {
+      position: fixed;
+      bottom: 12px; left: 12px; right: 12px;
+      background: rgba(0,0,0,0.6);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <button id="startBtn">Start Camera</button>
+  <button id="startBtn">Start camera</button>
   <video id="video" autoplay muted playsinline></video>
   <canvas id="overlay"></canvas>
-  <div id="ocrText">Tap anywhere to run OCR</div>
+  <div id="hint">Step 1: Beep when any object is detected. Press “Start camera” to unlock audio.</div>
 
   <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
 
-  <!-- Your script -->
+  <!-- App -->
   <script src="script.js"></script>
 </body>
 </html>
