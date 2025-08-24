@@ -2,8 +2,10 @@ const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
 const ctx = overlay.getContext('2d');
 const ocrText = document.getElementById('ocrText');
+const startBtn = document.getElementById('startBtn');
 
 let model;
+let audioCtx;
 
 // Load camera
 async function initCamera() {
@@ -25,11 +27,14 @@ async function initModel() {
 
 // Beep sound
 function beep() {
-  const ctx = new AudioContext();
-  const osc = ctx.createOscillator();
+  if (!audioCtx) return; // Audio not unlocked yet
+  const osc = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
   osc.type = 'sine';
   osc.frequency.value = 1000;
-  osc.connect(ctx.destination);
+  osc.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  gainNode.gain.value = 0.1;
   osc.start();
   setTimeout(() => osc.stop(), 100);
 }
@@ -47,7 +52,6 @@ async function detectFrame() {
     ctx.fillText(pred.class, pred.bbox[0], pred.bbox[1] > 10 ? pred.bbox[1] - 5 : 10);
   });
 
-  // Always beep if any object detected
   if (predictions.length > 0) {
     beep();
   }
@@ -57,6 +61,7 @@ async function detectFrame() {
 
 // OCR function
 async function runOCRNow() {
+  console.log("OCR started");
   ocrText.textContent = 'Running OCR...';
   const canvas = document.createElement('canvas');
   canvas.width = video.videoWidth;
@@ -65,6 +70,7 @@ async function runOCRNow() {
   cctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
   const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
+  console.log("OCR result:", text);
   ocrText.textContent = text.trim() || 'No text found';
 }
 
@@ -73,9 +79,11 @@ document.body.addEventListener('click', () => {
   runOCRNow();
 });
 
-// Init everything
-(async () => {
+// Start button to unlock audio + start detection
+startBtn.addEventListener('click', async () => {
+  audioCtx = new AudioContext(); // Unlock audio
+  startBtn.style.display = 'none';
   await initCamera();
   await initModel();
   detectFrame();
-})();
+});
