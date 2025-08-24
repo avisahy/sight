@@ -10,6 +10,9 @@ let audioCtx;
 let lastBeep = 0;
 const BEEP_INTERVAL_MS = 600;
 
+let running = false; // track if detection is active
+let tapTimes = [];   // store tap timestamps
+
 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
 
 function resizeCanvasToVideo() {
@@ -60,26 +63,20 @@ function beep(freq = 1000, durationMs = 120, volume = 0.12) {
 
 function estimateVolumeFromDistance(predictions) {
   if (predictions.length === 0) return 0;
-
-  // Find largest object by area
   let maxArea = 0;
   predictions.forEach(p => {
     const area = p.bbox[2] * p.bbox[3];
     if (area > maxArea) maxArea = area;
   });
-
-  // Normalize: area / max possible area (video width * height)
   const maxPossibleArea = video.videoWidth * video.videoHeight;
   let ratio = maxArea / maxPossibleArea;
-
-  // Clamp between 0.05 and 1.0
   ratio = Math.min(Math.max(ratio, 0.05), 1.0);
-
-  // Map to volume range (0.05 quiet → 0.3 loud)
   return 0.05 + (0.25 * ratio);
 }
 
 async function detectLoop() {
+  if (!running) return; // stop loop if not running
+
   const predictions = await model.detect(video);
   ctx.clearRect(0, 0, overlay.width, overlay.height);
 
@@ -114,6 +111,30 @@ async function detectLoop() {
   requestAnimationFrame(detectLoop);
 }
 
+function stopDetection() {
+  running = false;
+  hud.style.display = 'none';
+  startBtn.style.display = 'block';
+  startBtn.textContent = 'Start camera';
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(track => track.stop());
+    video.srcObject = null;
+  }
+  ctx.clearRect(0, 0, overlay.width, overlay.height);
+  console.log("Detection stopped");
+}
+
+// Triple-tap detection
+document.body.addEventListener('click', () => {
+  const now = Date.now();
+  tapTimes.push(now);
+  tapTimes = tapTimes.filter(t => now - t < 800); // keep taps within 800ms
+  if (tapTimes.length >= 3) {
+    stopDetection();
+    tapTimes = [];
+  }
+});
+
 startBtn.addEventListener('click', async () => {
   try {
     audioCtx = new AudioContextClass();
@@ -125,6 +146,7 @@ startBtn.addEventListener('click', async () => {
 
     await initCamera();
     await initModel();
+    running = true;
     detectLoop();
   } catch (e) {
     console.error('Start failed:', e);
