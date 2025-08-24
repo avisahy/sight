@@ -28,32 +28,13 @@ body {
 header h1 { margin: 0 0 6px; font-size: 1.6rem; }
 header p { color: var(--muted); margin: 0 0 16px; }
 
-.controls, .preview, .output {
+.controls, .output {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 16px;
 }
-
-.dropzone {
-  border: 2px dashed #3a4150;
-  border-radius: 10px;
-  padding: 24px;
-  text-align: center;
-  color: var(--muted);
-  cursor: pointer;
-}
-.dropzone:hover { border-color: var(--accent); }
-.dropzone.dragover { border-color: var(--accent-2); }
-.dropzone input[type="file"] { display: block; margin: 0 auto 8px; }
-
-.lang-select {
-  display: flex;
-  gap: 16px;
-  margin: 12px 0;
-}
-.lang-select label { cursor: pointer; }
 
 .primary {
   background: linear-gradient(135deg, var(--accent), #7c5bff);
@@ -63,7 +44,24 @@ header p { color: var(--muted); margin: 0 0 16px; }
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
+  margin-bottom: 12px;
 }
+
+video {
+  width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: black;
+  margin-bottom: 12px;
+}
+
+.lang-select {
+  display: flex;
+  gap: 16px;
+  margin: 12px 0;
+}
+.lang-select label { cursor: pointer; }
 
 .progress-wrap { margin-top: 12px; }
 .progress-bar {
@@ -76,12 +74,6 @@ header p { color: var(--muted); margin: 0 0 16px; }
   margin-top: 6px;
   font-size: 0.9rem;
   color: var(--muted);
-}
-
-.preview img {
-  max-width: 100%;
-  border-radius: 8px;
-  border: 1px solid var(--border);
 }
 
 .output-actions {
@@ -109,15 +101,3 @@ textarea#output {
   border: 1px solid var(--border);
   unicode-bidi: plaintext;
 }
-
-/* ... keep your previous styles ... */
-
-video {
-  width: 100%;
-  max-height: 300px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: black;
-  margin-bottom: 12px;
-}
-
