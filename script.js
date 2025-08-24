@@ -123,7 +123,6 @@ function stopDetection() {
     video.srcObject = null;
   }
   ctx.clearRect(0, 0, overlay.width, overlay.height);
-  console.log("Detection stopped");
 }
 
 async function runOCR() {
@@ -136,4 +135,8 @@ async function runOCR() {
 
   const { data: { text } } = await Tesseract.recognize(tempCanvas, 'eng+heb');
   const cleanText = text.trim();
-  console.log("OCR result
+  console.log("OCR result:", cleanText);
+
+  let utterance;
+  if (cleanText) {
+    utterance = new SpeechS
