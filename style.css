@@ -1,68 +1,111 @@
+:root {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --text: #e6e6e6;
+  --muted: #a8b0bd;
+  --accent: #5b9cff;
+  --accent-2: #7dd3fc;
+  --ok: #10b981;
+  --border: #2a2f3a;
+}
+
+* { box-sizing: border-box; }
+
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
-  background: #111;
-  color: #eee;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+header h1 { margin: 0 0 6px; font-size: 1.6rem; }
+header p { color: var(--muted); margin: 0 0 16px; }
+
+.controls, .preview, .output {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.dropzone {
+  border: 2px dashed #3a4150;
+  border-radius: 10px;
+  padding: 24px;
   text-align: center;
+  color: var(--muted);
+  cursor: pointer;
 }
+.dropzone:hover { border-color: var(--accent); }
+.dropzone.dragover { border-color: var(--accent-2); }
+.dropzone input[type="file"] { display: block; margin: 0 auto 8px; }
 
-#video,
-#overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: auto;
-  max-height: 100vh;
-  object-fit: cover;
+.lang-select {
+  display: flex;
+  gap: 16px;
+  margin: 12px 0;
 }
+.lang-select label { cursor: pointer; }
 
-#hud {
-  position: fixed;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: none;
-  gap: 10px;
-  z-index: 10;
-}
-
-button {
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
+.primary {
+  background: linear-gradient(135deg, var(--accent), #7c5bff);
+  color: white;
+  padding: 10px 14px;
   border: none;
-  border-radius: 6px;
-  background: #00ff7f;
-  color: #000;
+  border-radius: 10px;
+  font-weight: 600;
   cursor: pointer;
 }
 
-#beepFlash {
-  position: fixed;
-  top: 0;
-  left: 0;
+.progress-wrap { margin-top: 12px; }
+.progress-bar {
+  height: 8px;
+  background: linear-gradient(90deg, var(--accent), var(--ok));
+  width: 0%;
+  border-radius: 999px;
+}
+.progress-text {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.preview img {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.output-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.output-actions button, .output-actions select {
+  background: #222735;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+textarea#output {
   width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.3);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s;
-  z-index: 5;
-}
-
-#beepFlash.active {
-  opacity: 1;
-}
-
-#result {
-  position: fixed;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.7);
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  max-width: 90%;
-  font-size: 1rem;
-  z-index: 10;
+  min-height: 260px;
+  resize: vertical;
+  padding: 12px;
+  border-radius: 10px;
+  background: #0f131c;
+  color: var(--text);
+  border: 1px solid var(--border);
+  unicode-bidi: plaintext;
 }
