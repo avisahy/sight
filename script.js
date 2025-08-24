@@ -139,4 +139,43 @@ async function runOCR() {
 
   let utterance;
   if (cleanText) {
-    utterance = new SpeechS
+    // Auto language detection: Hebrew characters?
+    if (/[\u0590-\u05FF]/.test(cleanText)) {
+      utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'he-IL';
+    } else {
+      utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'en-US';
+    }
+    speechSynthesis.speak(utterance);
+  } else {
+    utterance = new SpeechSynthesisUtterance("No text detected");
+    utterance.lang = 'en-US';
+    speechSynthesis.speak(utterance);
+  }
+}
+
+startBtn.addEventListener('click', async () => {
+  try {
+    audioCtx = new AudioContextClass();
+    await audioCtx.resume();
+    beep(880, 100, 0.12); // test beep
+
+    startBtn.style.display = 'none';
+    hud.style.display = 'flex';
+    stopBtn.style.display = 'block';
+    ocrBtn.style.display = 'block';
+
+    await initCamera();
+    await initModel();
+    running = true;
+    detectLoop();
+  } catch (e) {
+    console.error('Start failed:', e);
+    startBtn.disabled = false;
+    startBtn.textContent = 'Start camera (retry)';
+  }
+});
+
+stopBtn.addEventListener('click', stopDetection);
+ocrBtn.addEventListener('click', runOCR);
