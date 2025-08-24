@@ -3,64 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Object Detection + OCR</title>
-<style>
-  body {
-    margin: 0;
-    font-family: system-ui, sans-serif;
-    background: #111;
-    color: #eee;
-    text-align: center;
-  }
-  #video, #overlay {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%;
-    height: auto;
-    max-height: 100vh;
-    object-fit: cover;
-  }
-  #hud {
-    position: fixed;
-    top: 10px; left: 50%;
-    transform: translateX(-50%);
-    display: none;
-    gap: 10px;
-    z-index: 10;
-  }
-  button {
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    border: none;
-    border-radius: 6px;
-    background: #00ff7f;
-    color: #000;
-    cursor: pointer;
-  }
-  #beepFlash {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(255,255,255,0.3);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.15s;
-    z-index: 5;
-  }
-  #beepFlash.active {
-    opacity: 1;
-  }
-  #result {
-    position: fixed;
-    bottom: 10px; left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.7);
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    max-width: 90%;
-    font-size: 1rem;
-    z-index: 10;
-  }
-</style>
+
 </head>
 <body>
 
@@ -93,3 +36,4 @@
 
 </body>
 </html>
+
