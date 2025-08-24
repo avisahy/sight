@@ -2,6 +2,7 @@ const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
 const ctx = overlay.getContext('2d');
 const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
 const hud = document.getElementById('hud');
 const beepFlash = document.getElementById('beepFlash');
 
@@ -9,9 +10,7 @@ let model;
 let audioCtx;
 let lastBeep = 0;
 const BEEP_INTERVAL_MS = 600;
-
-let running = false; // track if detection is active
-let tapTimes = [];   // store tap timestamps
+let running = false;
 
 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
 
@@ -75,7 +74,7 @@ function estimateVolumeFromDistance(predictions) {
 }
 
 async function detectLoop() {
-  if (!running) return; // stop loop if not running
+  if (!running) return;
 
   const predictions = await model.detect(video);
   ctx.clearRect(0, 0, overlay.width, overlay.height);
@@ -114,6 +113,7 @@ async function detectLoop() {
 function stopDetection() {
   running = false;
   hud.style.display = 'none';
+  stopBtn.style.display = 'none';
   startBtn.style.display = 'block';
   startBtn.textContent = 'Start camera';
   if (video.srcObject) {
@@ -124,17 +124,6 @@ function stopDetection() {
   console.log("Detection stopped");
 }
 
-// Triple-tap detection
-document.body.addEventListener('click', () => {
-  const now = Date.now();
-  tapTimes.push(now);
-  tapTimes = tapTimes.filter(t => now - t < 800); // keep taps within 800ms
-  if (tapTimes.length >= 3) {
-    stopDetection();
-    tapTimes = [];
-  }
-});
-
 startBtn.addEventListener('click', async () => {
   try {
     audioCtx = new AudioContextClass();
@@ -143,6 +132,7 @@ startBtn.addEventListener('click', async () => {
 
     startBtn.style.display = 'none';
     hud.style.display = 'flex';
+    stopBtn.style.display = 'block';
 
     await initCamera();
     await initModel();
@@ -154,3 +144,5 @@ startBtn.addEventListener('click', async () => {
     startBtn.textContent = 'Start camera (retry)';
   }
 });
+
+stopBtn.addEventListener('click', stopDetection);
