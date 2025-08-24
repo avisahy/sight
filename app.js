@@ -13,6 +13,14 @@ const previewSection = document.getElementById('previewSection');
 const previewImg = document.getElementById('previewImg');
 
 let currentFile = null;
+let availableVoices = [];
+
+// Load voices
+function loadVoices() {
+  availableVoices = speechSynthesis.getVoices();
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
 
 // Drag & drop
 ['dragenter', 'dragover'].forEach(evt =>
@@ -108,15 +116,15 @@ speakBtn.addEventListener('click', () => {
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
 
-  const voices = speechSynthesis.getVoices();
+  // Pick voice based on detected language
   if (/[\u0590-\u05FF]/.test(text)) {
-    const hebVoice = voices.find(v => v.lang.startsWith('he'));
-    if (hebVoice) utterance.voice = hebVoice;
     utterance.lang = 'he-IL';
+    const hebVoice = availableVoices.find(v => v.lang.startsWith('he'));
+    if (hebVoice) utterance.voice = hebVoice;
   } else {
-    const enVoice = voices.find(v => v.lang.startsWith('en'));
-    if (enVoice) utterance.voice = enVoice;
     utterance.lang = 'en-US';
+    const enVoice = availableVoices.find(v => v.lang.startsWith('en'));
+    if (enVoice) utterance.voice = enVoice;
   }
 
   utterance.rate = 1;
@@ -161,9 +169,4 @@ function flash(el, message, ms) {
     el.textContent = prev;
     el.style.color = '';
   }, ms);
-}
-
-// Ensure voices are loaded
-if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
-  speechSynthesis.onvoiceschanged = () => {};
 }
