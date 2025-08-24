@@ -1,67 +1,56 @@
 <!doctype html>
 <html lang="en" dir="ltr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OCR (Hebrew + English) with Speech</title>
-    <link rel="stylesheet" href="styles.css" />
-    <!-- Tesseract.js -->
-    <script src="https://unpkg.com/tesseract.js@v2.1.5/dist/tesseract.min.js"></script>
-  </head>
-  <body>
-    <main class="container">
-      <header>
-        <h1>OCR — Hebrew + English</h1>
-        <p>Upload an image, run OCR, and hear the result aloud.</p>
-      </header>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Camera OCR (Hebrew + English) with Speech</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://unpkg.com/tesseract.js@v2.1.5/dist/tesseract.min.js"></script>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Live Camera OCR — Hebrew + English</h1>
+      <p>Point your camera at text, capture, and hear it read aloud.</p>
+    </header>
 
-      <section class="controls">
-        <div class="dropzone" id="dropzone">
-          <input id="fileInput" type="file" accept="image/*" />
-          <p>Drag & drop an image here, or click to choose</p>
-        </div>
+    <section class="controls">
+      <video id="video" autoplay playsinline></video>
+      <div class="lang-select">
+        <label><input type="checkbox" name="lang" value="heb" checked /> Hebrew</label>
+        <label><input type="checkbox" name="lang" value="eng" checked /> English</label>
+      </div>
+      <button id="captureBtn" class="primary">Capture & OCR</button>
+      <div class="progress-wrap" id="progressWrap" hidden>
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="progress-text" id="progressText">Preparing…</div>
+      </div>
+    </section>
 
-        <div class="lang-select">
-          <label><input type="checkbox" name="lang" value="heb" checked /> Hebrew</label>
-          <label><input type="checkbox" name="lang" value="eng" checked /> English</label>
-        </div>
+    <section class="output">
+      <h2>Extracted text</h2>
+      <div class="output-actions">
+        <button id="copyBtn">Copy</button>
+        <button id="clearBtn">Clear</button>
+        <button id="speakBtn">Speak</button>
+        <label class="dir-toggle">
+          Direction:
+          <select id="dirSelect">
+            <option value="auto" selected>Auto</option>
+            <option value="rtl">RTL</option>
+            <option value="ltr">LTR</option>
+          </select>
+        </label>
+      </div>
+      <textarea id="output" placeholder="OCR text will appear here…" dir="auto"></textarea>
+    </section>
 
-        <button id="runBtn" class="primary">Run OCR</button>
+    <footer>
+      <small>Tip: Hold the camera steady and ensure good lighting for best OCR results.</small>
+    </footer>
+  </main>
 
-        <div class="progress-wrap" id="progressWrap" hidden>
-          <div class="progress-bar" id="progressBar"></div>
-          <div class="progress-text" id="progressText">Preparing…</div>
-        </div>
-      </section>
-
-      <section class="preview" id="previewSection" hidden>
-        <h2>Preview</h2>
-        <img id="previewImg" alt="Preview" />
-      </section>
-
-      <section class="output">
-        <h2>Extracted text</h2>
-        <div class="output-actions">
-          <button id="copyBtn">Copy</button>
-          <button id="clearBtn">Clear</button>
-          <button id="speakBtn">Speak</button>
-          <label class="dir-toggle">
-            Direction:
-            <select id="dirSelect">
-              <option value="auto" selected>Auto</option>
-              <option value="rtl">RTL</option>
-              <option value="ltr">LTR</option>
-            </select>
-          </label>
-        </div>
-        <textarea id="output" placeholder="OCR text will appear here…" dir="auto"></textarea>
-      </section>
-
-      <footer>
-        <small>Tip: For best results, use sharp, high‑contrast images. Set direction to RTL for Hebrew paragraphs if needed.</small>
-      </footer>
-    </main>
-
-    <script src="app.js" defer></script>
-  </body>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <script src="app.js" defer></script>
+</body>
 </html>
