@@ -3,6 +3,7 @@ const overlay = document.getElementById('overlay');
 const ctx = overlay.getContext('2d');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
+const ocrBtn = document.getElementById('ocrBtn');
 const hud = document.getElementById('hud');
 const beepFlash = document.getElementById('beepFlash');
 
@@ -114,6 +115,7 @@ function stopDetection() {
   running = false;
   hud.style.display = 'none';
   stopBtn.style.display = 'none';
+  ocrBtn.style.display = 'none';
   startBtn.style.display = 'block';
   startBtn.textContent = 'Start camera';
   if (video.srcObject) {
@@ -124,25 +126,14 @@ function stopDetection() {
   console.log("Detection stopped");
 }
 
-startBtn.addEventListener('click', async () => {
-  try {
-    audioCtx = new AudioContextClass();
-    await audioCtx.resume();
-    beep(880, 100, 0.12); // test beep
+async function runOCR() {
+  console.log("Running OCR...");
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = video.videoWidth;
+  tempCanvas.height = video.videoHeight;
+  const tctx = tempCanvas.getContext('2d');
+  tctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
 
-    startBtn.style.display = 'none';
-    hud.style.display = 'flex';
-    stopBtn.style.display = 'block';
-
-    await initCamera();
-    await initModel();
-    running = true;
-    detectLoop();
-  } catch (e) {
-    console.error('Start failed:', e);
-    startBtn.disabled = false;
-    startBtn.textContent = 'Start camera (retry)';
-  }
-});
-
-stopBtn.addEventListener('click', stopDetection);
+  const { data: { text } } = await Tesseract.recognize(tempCanvas, 'eng+heb');
+  const cleanText = text.trim();
+  console.log("OCR result
