@@ -1,127 +1,125 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>One-Button Camera Text Reader</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body {
-      margin: 0; font-family: system-ui, Arial, sans-serif;
-      display: grid; min-height: 100dvh; place-items: center; background: #111; color: #eee;
-    }
-    .wrap { width: 100%; max-width: 800px; padding: 16px; text-align: center; }
-    video { width: 100%; max-height: 60dvh; background: #000; border-radius: 12px; }
-    button {
-      appearance: none; border: 0; border-radius: 999px; padding: 14px 22px; margin: 12px 0;
-      font-size: 16px; font-weight: 600; color: #111; background: #00e0a3; cursor: pointer;
-    }
-    button:disabled { opacity: 0.6; cursor: default; }
-    .status { margin-top: 8px; font-size: 14px; opacity: 0.85; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>One-Button Camera Text Reader</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0; font-family: system-ui, Arial, sans-serif;
+    display: grid; min-height: 100dvh; place-items: center;
+    background: #111; color: #eee;
+  }
+  .wrap { width: 100%; max-width: 800px; padding: 16px; text-align: center; }
+  video { width: 100%; max-height: 60dvh; background: #000; border-radius: 12px; }
+  button {
+    appearance: none; border: 0; border-radius: 999px; padding: 14px 22px;
+    margin: 12px 0; font-size: 16px; font-weight: 600;
+    color: #111; background: #00e0a3; cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .status { margin-top: 8px; font-size: 14px; opacity: 0.85; }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Camera Text & Number Reader</h1>
-    <button id="startBtn">Start</button>
-    <video id="cam" playsinline autoplay muted></video>
-    <canvas id="snap" style="display:none"></canvas>
-    <div class="status" id="status">Tap Start, then point the camera at clear printed text.</div>
-  </div>
+<div class="wrap">
+  <h1>Camera Text & Number Reader</h1>
+  <button id="startBtn">Start</button>
+  <video id="cam" playsinline autoplay muted></video>
+  <canvas id="snap" style="display:none"></canvas>
+  <div class="status" id="status">Tap Start, then point the camera at clear printed text.</div>
+</div>
 
-  <!-- Tesseract.js (OCR) -->
-  <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script>
-    const startBtn = document.getElementById('startBtn');
-    const video = document.getElementById('cam');
-    const canvas = document.getElementById('snap');
-    const ctx = canvas.getContext('2d');
-    const statusEl = document.getElementById('status');
+<!-- Tesseract.js for OCR -->
+<script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+const startBtn = document.getElementById('startBtn');
+const video = document.getElementById('cam');
+const canvas = document.getElementById('snap');
+const ctx = canvas.getContext('2d');
+const statusEl = document.getElementById('status');
 
-    let running = false;
-    let lastSpoken = '';
-    const OCR_INTERVAL_MS = 2500; // adjust if you want faster/slower scans
+let running = false;
+let lastSpoken = '';
+const OCR_INTERVAL_MS = 2500;
 
-    function setStatus(msg) { statusEl.textContent = msg; }
+function setStatus(msg) { statusEl.textContent = msg; }
 
-    function normalize(text) {
-      // Keep letters, numbers, spaces; collapse whitespace; lowercase for comparison
-      return (text || '')
-        .replace(/[^0-9A-Za-zא-ת\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .toLowerCase();
-    }
+function normalize(text) {
+  return (text || '')
+    .replace(/[^0-9A-Za-zא-ת\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
 
-    function speak(text) {
-      if (!text) return;
-      const utter = new SpeechSynthesisUtterance(text);
-      // Optional: choose a voice or rate here, e.g. utter.rate = 1.0;
-      window.speechSynthesis.speak(utter);
-    }
+function speak(text) {
+  if (!text) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.volume = 1.0; // loudest
+  utter.rate = 1.0;
+  utter.pitch = 1.0;
+  // Cancel any ongoing speech to avoid overlap
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
 
-    async function start() {
-      try {
-        startBtn.disabled = true;
-        startBtn.textContent = 'Running...';
-        running = true;
+async function start() {
+  try {
+    startBtn.disabled = true;
+    startBtn.textContent = 'Running...';
+    running = true;
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: 'environment' }, // use back camera on phones
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          audio: false
-        });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
 
-        video.srcObject = stream;
-        await video.play();
-        setStatus('Camera on. Scanning for text...');
-        ocrLoop(); // fire and forget
-      } catch (err) {
-        running = false;
-        startBtn.disabled = false;
-        startBtn.textContent = 'Start';
-        setStatus('Could not access camera: ' + err.message);
-      }
-    }
+    video.srcObject = stream;
+    await video.play();
+    setStatus('Camera on. Scanning for text...');
+    ocrLoop();
+  } catch (err) {
+    running = false;
+    startBtn.disabled = false;
+    startBtn.textContent = 'Start';
+    setStatus('Could not access camera: ' + err.message);
+  }
+}
 
-    async function ocrOnce() {
-      const w = video.videoWidth, h = video.videoHeight;
-      if (!w || !h) return null;
-      canvas.width = w; canvas.height = h;
-      ctx.drawImage(video, 0, 0, w, h);
-      // Change 'eng' to 'heb' for Hebrew, or 'eng+heb' to try both
-      return await Tesseract.recognize(canvas, 'eng', {});
-    }
+async function ocrOnce() {
+  const w = video.videoWidth, h = video.videoHeight;
+  if (!w || !h) return null;
+  canvas.width = w; canvas.height = h;
+  ctx.drawImage(video, 0, 0, w, h);
+  return await Tesseract.recognize(canvas, 'eng', {}); // change to 'eng+heb' for English+Hebrew
+}
 
-    async function ocrLoop() {
-      while (running) {
-        try {
-          const res = await ocrOnce();
-          if (res && res.data && res.data.text) {
-            const cleaned = normalize(res.data.text);
-            // Speak only if meaningful and different from last spoken
-            const minLen = 3;
-            if (cleaned && cleaned.length >= minLen && cleaned !== lastSpoken) {
-              lastSpoken = cleaned;
-              setStatus('Reading: "' + cleaned + '"');
-              speak(cleaned);
-            } else {
-              setStatus('Scanning...');
-            }
-          } else {
-            setStatus('Scanning...');
-          }
-        } catch (e) {
-          setStatus('OCR error: ' + e.message);
+async function ocrLoop() {
+  while (running) {
+    try {
+      const res = await ocrOnce();
+      if (res && res.data && res.data.text) {
+        const cleaned = normalize(res.data.text);
+        if (cleaned && cleaned.length >= 3 && cleaned !== lastSpoken) {
+          lastSpoken = cleaned;
+          setStatus('Reading: "' + cleaned + '"');
+          speak(cleaned);
+        } else {
+          setStatus('Scanning...');
         }
-        await new Promise(r => setTimeout(r, OCR_INTERVAL_MS));
+      } else {
+        setStatus('Scanning...');
       }
+    } catch (e) {
+      setStatus('OCR error: ' + e.message);
     }
+    await new Promise(r => setTimeout(r, OCR_INTERVAL_MS));
+  }
+}
 
-    startBtn.addEventListener('click', start);
-  </script>
+startBtn.addEventListener('click', start);
+</script>
 </body>
 </html>
