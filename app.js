@@ -1,89 +1,130 @@
+// Elements
 const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
 const ctx = overlay.getContext('2d');
-const ocrText = document.getElementById('ocrText');
 const startBtn = document.getElementById('startBtn');
 
 let model;
 let audioCtx;
+let lastBeep = 0;
+const BEEP_INTERVAL_MS = 600;
 
-// Load camera
-async function initCamera() {
-  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-  video.srcObject = stream;
-  return new Promise(resolve => {
-    video.onloadedmetadata = () => {
-      overlay.width = video.videoWidth;
-      overlay.height = video.videoHeight;
-      resolve();
-    };
-  });
+// iOS support
+const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+// Resize canvas to match video
+function resizeCanvasToVideo() {
+  const rect = video.getBoundingClientRect();
+  overlay.width = rect.width;
+  overlay.height = rect.height;
+  ctx.font = '16px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+  ctx.textBaseline = 'top';
 }
 
-// Load model
+// Camera
+async function initCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' } },
+    audio: false
+  });
+  video.srcObject = stream;
+
+  // Wait for video to have dimensions
+  await new Promise(resolve => {
+    if (video.readyState >= 2 && video.videoWidth > 0) return resolve();
+    video.onloadedmetadata = () => resolve();
+  });
+
+  // Ensure playback started
+  await video.play().catch(() => {});
+  resizeCanvasToVideo();
+  window.addEventListener('resize', resizeCanvasToVideo);
+}
+
+// Model
 async function initModel() {
   model = await cocoSsd.load();
 }
 
-// Beep sound
-function beep() {
-  if (!audioCtx) return; // Audio not unlocked yet
+// Safe beep (unlocked after user tap)
+function beep(freq = 1000, durationMs = 120, volume = 0.12) {
+  if (!audioCtx) return;
   const osc = audioCtx.createOscillator();
-  const gainNode = audioCtx.createGain();
+  const gain = audioCtx.createGain();
   osc.type = 'sine';
-  osc.frequency.value = 1000;
-  osc.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
-  gainNode.gain.value = 0.1;
-  osc.start();
-  setTimeout(() => osc.stop(), 100);
+  osc.frequency.value = freq;
+  gain.gain.value = volume;
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  // Quick envelope to avoid clicks
+  const now = audioCtx.currentTime;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+  gain.gain.linearRampToValueAtTime(0, now + durationMs / 1000);
+
+  osc.start(now);
+  osc.stop(now + durationMs / 1000);
 }
 
-// Object detection loop
-async function detectFrame() {
-  const predictions = await model.detect(video);
-  ctx.clearRect(0, 0, overlay.width, overlay.height);
+// Detection loop
+async function detectLoop() {
+  try {
+    const predictions = await model.detect(video);
+    // Clear
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
 
-  predictions.forEach(pred => {
-    ctx.strokeStyle = '#00FF00';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(...pred.bbox);
-    ctx.fillStyle = '#00FF00';
-    ctx.fillText(pred.class, pred.bbox[0], pred.bbox[1] > 10 ? pred.bbox[1] - 5 : 10);
-  });
+    // Draw boxes and labels (helps confirm it’s working)
+    predictions.forEach(p => {
+      const [x, y, w, h] = p.bbox;
+      // Scale bbox from video’s intrinsic size to canvas size
+      const scaleX = overlay.width / video.videoWidth;
+      const scaleY = overlay.height / video.videoHeight;
+      const sx = x * scaleX, sy = y * scaleY, sw = w * scaleX, sh = h * scaleY;
 
-  if (predictions.length > 0) {
-    beep();
+      ctx.strokeStyle = '#00ff7f';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(sx, sy, sw, sh);
+      ctx.fillStyle = '#00ff7f';
+      const label = `${p.class} ${(p.score * 100).toFixed(0)}%`;
+      ctx.fillText(label, sx + 4, Math.max(2, sy - 18));
+    });
+
+    // Rate-limited beep if any object detected
+    if (predictions.length > 0) {
+      const now = performance.now();
+      if (now - lastBeep > BEEP_INTERVAL_MS) {
+        beep(920, 110, 0.10);
+        lastBeep = now;
+      }
+    }
+  } catch (e) {
+    console.error('detectLoop error:', e);
+  } finally {
+    requestAnimationFrame(detectLoop);
   }
-
-  requestAnimationFrame(detectFrame);
 }
 
-// OCR function
-async function runOCRNow() {
-  console.log("OCR started");
-  ocrText.textContent = 'Running OCR...';
-  const canvas = document.createElement('canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const cctx = canvas.getContext('2d');
-  cctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-  const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
-  console.log("OCR result:", text);
-  ocrText.textContent = text.trim() || 'No text found';
-}
-
-// Tap to trigger OCR
-document.body.addEventListener('click', () => {
-  runOCRNow();
-});
-
-// Start button to unlock audio + start detection
+// Start handler (unlocks audio and starts everything)
 startBtn.addEventListener('click', async () => {
-  audioCtx = new AudioContext(); // Unlock audio
-  startBtn.style.display = 'none';
-  await initCamera();
-  await initModel();
-  detectFrame();
+  try {
+    startBtn.disabled = true;
+    startBtn.textContent = 'Starting...';
+
+    audioCtx = new AudioContextClass();
+    await audioCtx.resume();
+
+    // Test beep to confirm audio unlocked
+    beep(880, 100, 0.12);
+
+    await initCamera();
+    await initModel();
+
+    startBtn.style.display = 'none';
+    detectLoop();
+  } catch (e) {
+    console.error('Start failed:', e);
+    startBtn.disabled = false;
+    startBtn.textContent = 'Start camera (retry)';
+  }
 });
