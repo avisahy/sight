@@ -1,3 +1,4 @@
+// ====== Element references ======
 const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
 const ctx = overlay.getContext('2d');
@@ -11,6 +12,7 @@ const objectsDiv = document.getElementById('objects');
 const ocrTextDiv = document.getElementById('ocrText');
 const logDiv = document.getElementById('log');
 
+// ====== State ======
 let stream, track, imageCapture;
 let torchOn = false;
 let mode = 'object';
@@ -18,6 +20,7 @@ let model;
 let detecting = false;
 let lastText = '';
 
+// ====== Speech voices ======
 let voices = [];
 const refreshVoices = () => { voices = window.speechSynthesis ? speechSynthesis.getVoices() : []; };
 if ('speechSynthesis' in window) {
@@ -25,6 +28,7 @@ if ('speechSynthesis' in window) {
   window.speechSynthesis.onvoiceschanged = refreshVoices;
 }
 
+// ====== OCR worker ======
 const worker = Tesseract.createWorker({ logger: m => {} });
 let workerReady = false;
 (async () => {
@@ -36,6 +40,7 @@ let workerReady = false;
   } catch (e) { log('Tesseract init failed: ' + e.message); }
 })();
 
+// ====== Helpers ======
 function log(msg) { console.log(msg); logDiv.textContent = msg; }
 function resizeCanvas() {
   const rect = video.getBoundingClientRect();
@@ -43,61 +48,103 @@ function resizeCanvas() {
   overlay.height = video.videoHeight || rect.height;
 }
 
-async function startCamera() {
-  if (!navigator.mediaDevices?.getUserMedia) { log('Camera not supported.'); return; }
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: false
-    });
-    video.srcObject = stream;
-    await video.play();
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    track = stream.getVideoTracks()[0];
-    captureBtn.disabled = false;
-    speakBtn.disabled = false;
-    startBtn.textContent = 'Camera On';
-    startBtn.disabled = true;
-
+// ====== Permission check ======
+async function checkCameraPermission() {
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+    log('⚠️ Camera access requires HTTPS on mobile. Please use https://');
+    return;
+  }
+  if (navigator.permissions && navigator.permissions.query) {
     try {
-      imageCapture = new ImageCapture(track);
-      const cap = await track.getCapabilities?.();
-      const hasTorch = cap && 'torch' in cap && cap.torch;
-      torchBtn.disabled = !hasTorch;
-    } catch { torchBtn.disabled = true; }
-
-    if (mode === 'object' && !model) {
-      log('Loading object model...');
-      model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
-      log('Model ready.');
-      startDetectLoop();
-    }
-  } catch (e) { log('Camera error: ' + e.message); }
+      const status = await navigator.permissions.query({ name: 'camera' });
+      if (status.state === 'granted') log('✅ Camera permission is already granted.');
+      else if (status.state === 'prompt') log('ℹ️ Camera permission will be requested when you start the camera.');
+      else if (status.state === 'denied') log('🚫 Camera permission is blocked. Enable it in your browser/device settings.');
+    } catch { log('Permissions API not supported. Try starting the camera to see if it works.'); }
+  } else {
+    log('Permissions API not supported. Try starting the camera to see if it works.');
+  }
 }
 
-async function toggleTorch() {
-  if (!track) return;
+// ====== Start camera ======
+async function startCamera() {
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+    log('⚠️ Camera access requires HTTPS on mobile. Please use https://');
+    return;
+  }
+  if (navigator.permissions && navigator.permissions.query) {
+    try {
+      const status = await navigator.permissions.query({ name: 'camera' });
+      if (status.state === 'denied') {
+        log('🚫 Camera permission is blocked. Enable it in your browser/device settings.');
+        return;
+      }
+    } catch {}
+  }
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+
+  const tryConstraints = async (constraints) => {
+    try { return await navigator.mediaDevices.getUserMedia(constraints); }
+    catch (err) { console.warn('getUserMedia failed for', constraints, err); return null; }
+  };
+
+  const constraintsRear = { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
+  const constraintsFront = { video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
+
+  log('📷 Requesting camera…');
+  let s = await tryConstraints(constraintsRear);
+  if (!s) { log('Rear camera not available, trying front camera…'); s = await tryConstraints(constraintsFront); }
+  if (!s) { log('❌ Unable to access any camera. Check permissions in browser settings.'); return; }
+
+  stream = s;
+  video.srcObject = stream;
+  await video.play();
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  track = stream.getVideoTracks()[0];
+  captureBtn.disabled = false;
+  speakBtn.disabled = false;
+  startBtn.textContent = 'Camera On';
+  startBtn.disabled = true;
+
   try {
-    torchOn = !torchOn;
-    await track.applyConstraints({ advanced: [{ torch: torchOn }] });
-    torchBtn.textContent = torchOn ? 'Torch On' : 'Toggle Torch';
-  } catch (e) { log('Torch not supported: ' + e.message); }
+    imageCapture = new ImageCapture(track);
+    const cap = track.getCapabilities?.();
+    const hasTorch = cap && 'torch' in cap && cap.torch;
+    torchBtn.disabled = !hasTorch;
+  } catch {
+    torchBtn.disabled = true;
+  }
+
+  if (mode === 'object' && !model) {
+    log('Loading object model…');
+    model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
+    log('Model ready.');
+    startDetectLoop();
+  }
 }
 
+// ====== Mode switching ======
 function setMode(next) {
   mode = next;
   modeBtn.textContent = 'Mode: ' + (mode === 'object' ? 'Object' : 'Text');
   ctx.clearRect(0, 0, overlay.width, overlay.height);
   objectsDiv.textContent = '';
-  if (mode === 'object') { if (model && stream) startDetectLoop(); }
+  if (mode === 'object') {
+    if (model && stream) startDetectLoop();
+  }
 }
 
+// ====== Object detection loop ======
 function startDetectLoop() {
   if (detecting) return;
   detecting = true;
   const run = async () => {
-    if (!model || video.readyState < 2 || mode !== 'object') { detecting = false; return; }
+    if (!model || video.readyState < 2 || mode !== 'object') {
+      detecting = false;
+      return;
+    }
     setTimeout(async () => {
       try {
         const preds = await model.detect(video);
@@ -120,7 +167,7 @@ function drawDetections(preds) {
     ctx.strokeRect(x, y, w, h);
     ctx.fillStyle = 'rgba(0, 200, 255, 0.9)';
     ctx.font = '16px system-ui';
-    const label = `${p.class} ${(p.score*100).toFixed(0)}%`;
+    const label = `${p.class} ${(p.score * 100).toFixed(0)}%`;
     const textW = ctx.measureText(label).width + 8;
     ctx.fillRect(x, y - 20, textW, 20);
     ctx.fillStyle = '#000';
@@ -136,6 +183,7 @@ function listObjects(preds) {
   objectsDiv.textContent = out || '(none)';
 }
 
+// ====== OCR capture ======
 async function captureForOCR() {
   if (!workerReady) {
     log('OCR engine loading—try again in a moment.');
@@ -166,6 +214,7 @@ async function captureForOCR() {
   }
 }
 
+// ====== Speech synthesis ======
 function detectLangFromText(s) {
   return /[\u0590-\u05FF]/.test(s) ? 'he' : 'en';
 }
@@ -175,47 +224,3 @@ function chooseVoice(lang) {
   const exact = voices.find(v => targets.includes(v.lang));
   if (exact) return exact;
   const pref = voices.find(v => targets.some(t => v.lang.startsWith(t)));
-  return pref || voices[0];
-}
-
-function speak(text) {
-  if (!('speechSynthesis' in window)) {
-    log('Speech synthesis not supported.');
-    return;
-  }
-  const sel = langSelect.value;
-  const lang = sel === 'auto' ? detectLangFromText(text) : sel;
-  const utter = new SpeechSynthesisUtterance(text);
-  const v = chooseVoice(lang);
-  if (v) {
-    utter.voice = v;
-    utter.lang = v.lang;
-  } else {
-    utter.lang = lang === 'he' ? 'he-IL' : 'en-US';
-  }
-  utter.rate = 1;
-  utter.pitch = 1;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(utter);
-}
-
-// Event listeners
-startBtn.addEventListener('click', startCamera);
-torchBtn.addEventListener('click', toggleTorch);
-modeBtn.addEventListener('click', () => setMode(mode === 'object' ? 'text' : 'object'));
-captureBtn.addEventListener('click', captureForOCR);
-speakBtn.addEventListener('click', () => lastText && speak(lastText));
-
-video.addEventListener('playing', async () => {
-  if (mode === 'object' && !model) {
-    model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
-    startDetectLoop();
-  }
-});
-
-// Optional: register service worker for PWA
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  });
-}
