@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+  />
+  <title>Smart Scanner</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- TensorFlow.js and COCO-SSD -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.16.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2"></script>
+  <!-- Tesseract.js (OCR for English + Hebrew) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Smart Scanner</h1>
+  </header>
+
+  <main>
+    <div class="video-wrap">
+      <video id="video" playsinline autoplay muted></video>
+      <canvas id="overlay"></canvas>
+    </div>
+
+    <div class="controls">
+      <button id="startBtn">Start Scan</button>
+      <button id="stopBtn" disabled>Stop Scan</button>
+    </div>
+
+    <div class="status">
+      <div><strong>Camera:</strong> <span id="camStatus">Idle</span></div>
+      <div><strong>ML models:</strong> <span id="mlStatus">Loading...</span></div>
+      <div><strong>OCR:</strong> <span id="ocrStatus">Idle</span></div>
+      <div><strong>Last spoken:</strong> <span id="spokenStatus">—</span></div>
+    </div>
+
+    <details class="tips">
+      <summary>Tips</summary>
+      <ul>
+        <li><strong>Light:</strong> Better lighting improves detection.</li>
+        <li><strong>Distance:</strong> The beep loudness rises as objects fill more of the frame.</li>
+        <li><strong>Words:</strong> Hebrew and English text are read aloud periodically.</li>
+      </ul>
+    </details>
+  </main>
+
+  <footer>
+    <small>© 2025 Smart Scanner</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
