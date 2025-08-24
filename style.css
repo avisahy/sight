@@ -10,3 +10,4 @@ button, select { font-size: 16px; padding: 12px; border-radius: 10px; border: 1p
 #log { min-height: 3em; padding: 8px; border-radius: 8px; background: #00000008; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; }
+#checkBtn { background-color: #fef3c7; }
