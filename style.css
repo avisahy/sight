@@ -16,7 +16,7 @@ body {
   object-fit: cover;
 }
 
-#startBtn, #stopBtn {
+#startBtn, #stopBtn, #ocrBtn {
   position: fixed;
   padding: 14px 22px;
   font-size: 18px;
@@ -30,7 +30,7 @@ body {
   transition: transform 0.2s ease;
 }
 
-#startBtn:active, #stopBtn:active {
+#startBtn:active, #stopBtn:active, #ocrBtn:active {
   transform: scale(0.96);
 }
 
@@ -41,6 +41,11 @@ body {
 
 #stopBtn {
   bottom: 20px; left: 50%;
+  transform: translateX(-50%);
+}
+
+#ocrBtn {
+  bottom: 70px; left: 50%;
   transform: translateX(-50%);
 }
 
