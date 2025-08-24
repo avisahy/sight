@@ -11,16 +11,20 @@
   <main class="container">
     <header>
       <h1>Live Camera OCR — Hebrew + English</h1>
-      <p>Point your camera at text, capture, and hear it read aloud.</p>
+      <p>Tap “Start Camera” to grant permission, then capture text and hear it aloud.</p>
     </header>
 
     <section class="controls">
-      <video id="video" autoplay playsinline></video>
+      <button id="startCameraBtn" class="primary">Start Camera</button>
+      <video id="video" autoplay playsinline muted hidden></video>
+
       <div class="lang-select">
         <label><input type="checkbox" name="lang" value="heb" checked /> Hebrew</label>
         <label><input type="checkbox" name="lang" value="eng" checked /> English</label>
       </div>
-      <button id="captureBtn" class="primary">Capture & OCR</button>
+
+      <button id="captureBtn" class="primary" hidden>Capture & OCR</button>
+
       <div class="progress-wrap" id="progressWrap" hidden>
         <div class="progress-bar" id="progressBar"></div>
         <div class="progress-text" id="progressText">Preparing…</div>
