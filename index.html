@@ -1,40 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Object Detection + OCR</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OCR (Hebrew + English) with Speech</title>
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Tesseract.js -->
+    <script src="https://unpkg.com/tesseract.js@v2.1.5/dist/tesseract.min.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>OCR — Hebrew + English</h1>
+        <p>Upload an image, select languages, run OCR, and hear the result.</p>
+      </header>
 
-<!-- Video and overlay -->
-<video id="video" autoplay playsinline muted></video>
-<canvas id="overlay"></canvas>
+      <section class="controls">
+        <div class="dropzone" id="dropzone">
+          <input id="fileInput" type="file" accept="image/*" />
+          <p>Drag & drop an image here, or click to choose</p>
+        </div>
 
-<!-- HUD buttons -->
-<div id="hud">
-  <button id="stopBtn">Stop</button>
-  <button id="ocrBtn">Scan Text</button>
-</div>
+        <div class="lang-select">
+          <label><input type="checkbox" name="lang" value="heb" checked /> Hebrew</label>
+          <label><input type="checkbox" name="lang" value="eng" checked /> English</label>
+        </div>
 
-<!-- Start button -->
-<button id="startBtn" style="margin-top: 20px;">Start camera</button>
+        <button id="runBtn" class="primary">Run OCR</button>
 
-<!-- OCR result -->
-<div id="result"></div>
+        <div class="progress-wrap" id="progressWrap" hidden>
+          <div class="progress-bar" id="progressBar"></div>
+          <div class="progress-text" id="progressText">Preparing…</div>
+        </div>
+      </section>
 
-<!-- Flash overlay for beep -->
-<div id="beepFlash"></div>
+      <section class="preview" id="previewSection" hidden>
+        <h2>Preview</h2>
+        <img id="previewImg" alt="Preview" />
+      </section>
 
-<!-- Load libraries -->
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+      <section class="output">
+        <h2>Extracted text</h2>
+        <div class="output-actions">
+          <button id="copyBtn">Copy</button>
+          <button id="clearBtn">Clear</button>
+          <button id="speakBtn">Speak</button>
+          <label class="dir-toggle">
+            Direction:
+            <select id="dirSelect">
+              <option value="auto" selected>Auto</option>
+              <option value="rtl">RTL</option>
+              <option value="ltr">LTR</option>
+            </select>
+          </label>
+        </div>
+        <textarea id="output" placeholder="OCR text will appear here…" dir="auto"></textarea>
+      </section>
 
-<!-- Your script -->
-<script src="script.js"></script>
+      <footer>
+        <small>Tip: For best results, use sharp, high‑contrast images. Set direction to RTL for Hebrew paragraphs if needed.</small>
+      </footer>
+    </main>
 
-</body>
+    <script src="app.js" defer></script>
+  </body>
 </html>
-
-
