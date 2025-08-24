@@ -9,6 +9,7 @@ let model;
 let audioCtx;
 let lastBeep = 0;
 const BEEP_INTERVAL_MS = 600;
+
 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
 
 function resizeCanvasToVideo() {
@@ -19,82 +20,115 @@ function resizeCanvasToVideo() {
 }
 
 async function initCamera() {
-  console.log("Requesting camera...");
   const stream = await navigator.mediaDevices.getUserMedia({
     video: { facingMode: { ideal: 'environment' } },
     audio: false
   });
-  console.log("Camera stream received");
   video.srcObject = stream;
   await new Promise(resolve => {
-    video.onloadedmetadata = () => {
-      console.log("Video metadata loaded");
-      resolve();
-    };
+    video.onloadedmetadata = () => resolve();
   });
   await video.play();
-  console.log("Video playing");
   resizeCanvasToVideo();
 }
 
 async function initModel() {
-  console.log("Loading model...");
   model = await cocoSsd.load();
-  console.log("Model loaded");
 }
 
-function beep() {
+function beep(freq = 1000, durationMs = 120, volume = 0.12) {
   if (!audioCtx) return;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = 'sine';
-  osc.frequency.value = 1000;
-  gain.gain.value = 0.12;
+  osc.frequency.value = freq;
+  gain.gain.value = volume;
   osc.connect(gain);
   gain.connect(audioCtx.destination);
+
   const now = audioCtx.currentTime;
   gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(0.12, now + 0.01);
-  gain.gain.linearRampToValueAtTime(0, now + 0.12);
+  gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+  gain.gain.linearRampToValueAtTime(0, now + durationMs / 1000);
+
   osc.start(now);
-  osc.stop(now + 0.12);
+  osc.stop(now + durationMs / 1000);
+
   beepFlash.classList.add('active');
   setTimeout(() => beepFlash.classList.remove('active'), 150);
+}
+
+function estimateVolumeFromDistance(predictions) {
+  if (predictions.length === 0) return 0;
+
+  // Find largest object by area
+  let maxArea = 0;
+  predictions.forEach(p => {
+    const area = p.bbox[2] * p.bbox[3];
+    if (area > maxArea) maxArea = area;
+  });
+
+  // Normalize: area / max possible area (video width * height)
+  const maxPossibleArea = video.videoWidth * video.videoHeight;
+  let ratio = maxArea / maxPossibleArea;
+
+  // Clamp between 0.05 and 1.0
+  ratio = Math.min(Math.max(ratio, 0.05), 1.0);
+
+  // Map to volume range (0.05 quiet → 0.3 loud)
+  return 0.05 + (0.25 * ratio);
 }
 
 async function detectLoop() {
   const predictions = await model.detect(video);
   ctx.clearRect(0, 0, overlay.width, overlay.height);
+
   predictions.forEach(p => {
     const [x, y, w, h] = p.bbox;
+    const scaleX = overlay.width / video.videoWidth;
+    const scaleY = overlay.height / video.videoHeight;
+    const sx = x * scaleX, sy = y * scaleY, sw = w * scaleX, sh = h * scaleY;
+
     ctx.strokeStyle = '#00ff7f';
     ctx.lineWidth = 2;
-    ctx.strokeRect(x, y, w, h);
+    ctx.shadowColor = '#00ff7f';
+    ctx.shadowBlur = 4;
+    ctx.beginPath();
+    ctx.roundRect(sx, sy, sw, sh, 6);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
     ctx.fillStyle = '#00ff7f';
-    ctx.fillText(`${p.class} ${(p.score * 100).toFixed(0)}%`, x + 4, y - 4);
+    ctx.fillText(`${p.class} ${(p.score * 100).toFixed(0)}%`, sx + 4, Math.max(2, sy - 18));
   });
+
   if (predictions.length > 0) {
     const now = performance.now();
     if (now - lastBeep > BEEP_INTERVAL_MS) {
-      beep();
+      const volume = estimateVolumeFromDistance(predictions);
+      beep(1000, 120, volume);
       lastBeep = now;
     }
   }
+
   requestAnimationFrame(detectLoop);
 }
 
 startBtn.addEventListener('click', async () => {
   try {
-    console.log("Start button clicked");
     audioCtx = new AudioContextClass();
     await audioCtx.resume();
-    beep();
+    beep(880, 100, 0.12); // test beep
+
     startBtn.style.display = 'none';
     hud.style.display = 'flex';
+
     await initCamera();
     await initModel();
     detectLoop();
-  } catch (err) {
-    console.error("Error starting app:", err);
+  } catch (e) {
+    console.error('Start failed:', e);
+    startBtn.disabled = false;
+    startBtn.textContent = 'Start camera (retry)';
   }
 });
