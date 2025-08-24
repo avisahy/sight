@@ -3,28 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Object + Text Detection</title>
-  <!-- Link to your CSS -->
-  <link rel="stylesheet" href="style.css">
+  <title>Object Detection + Tap-to-OCR</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      overflow: hidden;
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    #video, #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #ocrText {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.7);
+      padding: 10px;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
 <body>
-  <h1>Live Object + Text Detection</h1>
-  <div id="container">
-    <video id="video" autoplay muted playsinline></video>
-    <canvas id="overlay"></canvas>
-  </div>
-  <div id="instructions">
-    Allow camera access. Tap screen once on mobile to enable speech.
-  </div>
+  <video id="video" autoplay muted playsinline></video>
+  <canvas id="overlay"></canvas>
+  <div id="ocrText">Tap anywhere to run OCR</div>
 
-  <!-- TensorFlow.js -->
+  <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
-  <!-- COCO-SSD model -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
-  <!-- Tesseract.js -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
 
-  <!-- Your optimized script -->
+  <!-- Your script -->
   <script src="script.js"></script>
 </body>
 </html>
