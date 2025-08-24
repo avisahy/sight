@@ -1,6 +1,6 @@
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
-const runBtn = document.getElementById('runBtn');
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const captureBtn = document.getElementById('captureBtn');
 const progressWrap = document.getElementById('progressWrap');
 const progressBar = document.getElementById('progressBar');
 const progressText = document.getElementById('progressText');
@@ -9,10 +9,7 @@ const copyBtn = document.getElementById('copyBtn');
 const clearBtn = document.getElementById('clearBtn');
 const speakBtn = document.getElementById('speakBtn');
 const dirSelect = document.getElementById('dirSelect');
-const previewSection = document.getElementById('previewSection');
-const previewImg = document.getElementById('previewImg');
 
-let currentFile = null;
 let availableVoices = [];
 
 // Load voices
@@ -22,53 +19,34 @@ function loadVoices() {
 speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
-// Drag & drop
-['dragenter', 'dragover'].forEach(evt =>
-  dropzone.addEventListener(evt, e => {
-    e.preventDefault();
-    dropzone.classList.add('dragover');
+// Start camera
+navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+  .then(stream => {
+    video.srcObject = stream;
   })
-);
-['dragleave', 'drop'].forEach(evt =>
-  dropzone.addEventListener(evt, e => {
-    e.preventDefault();
-    dropzone.classList.remove('dragover');
-  })
-);
-dropzone.addEventListener('drop', e => {
-  const file = e.dataTransfer.files?.[0];
-  if (file) setFile(file);
-});
-dropzone.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', () => {
-  const file = fileInput.files?.[0];
-  if (file) setFile(file);
-});
+  .catch(err => {
+    console.error('Camera error:', err);
+    alert('Unable to access camera.');
+  });
 
-function setFile(file) {
-  if (!file.type.startsWith('image/')) {
-    alert('Please select an image file.');
-    return;
-  }
-  currentFile = file;
-  previewImg.src = URL.createObjectURL(file);
-  previewSection.hidden = false;
-}
-
-// Run OCR
-runBtn.addEventListener('click', async () => {
-  if (!currentFile) return alert('Please select an image first.');
-
+// Capture frame and run OCR
+captureBtn.addEventListener('click', async () => {
   const langs = Array.from(document.querySelectorAll('input[name="lang"]:checked')).map(cb => cb.value);
   if (!langs.length) return alert('Select at least one language.');
+
+  // Draw current video frame to canvas
+  const ctx = canvas.getContext('2d');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
   disableUI(true);
   output.value = '';
   showProgress(true, 0, 'Initializing…');
 
   try {
-    const imgURL = URL.createObjectURL(currentFile);
-    const { data } = await Tesseract.recognize(imgURL, langs.join('+'), {
+    const dataUrl = canvas.toDataURL('image/png');
+    const { data } = await Tesseract.recognize(dataUrl, langs.join('+'), {
       logger: m => {
         if (m.status && typeof m.progress === 'number') {
           const pct = Math.round(m.progress * 100);
@@ -96,7 +74,7 @@ copyBtn.addEventListener('click', async () => {
     await navigator.clipboard.writeText(output.value);
     flash(progressText, 'Copied to clipboard', 1500);
   } catch {
-    alert('Copy failed. Select text and copy manually.');
+    alert('Copy failed.');
   }
 });
 
@@ -108,15 +86,11 @@ clearBtn.addEventListener('click', () => {
 // Speak
 speakBtn.addEventListener('click', () => {
   const text = output.value.trim();
-  if (!text) {
-    alert('No text to speak.');
-    return;
-  }
+  if (!text) return alert('No text to speak.');
 
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
 
-  // Pick voice based on detected language
   if (/[\u0590-\u05FF]/.test(text)) {
     utterance.lang = 'he-IL';
     const hebVoice = availableVoices.find(v => v.lang.startsWith('he'));
@@ -145,8 +119,7 @@ function showProgress(show, pct = null, text = '') {
 }
 
 function disableUI(disabled) {
-  runBtn.disabled = disabled;
-  fileInput.disabled = disabled;
+  captureBtn.disabled = disabled;
 }
 
 function capitalize(s) {
