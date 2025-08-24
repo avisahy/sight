@@ -1,66 +1,64 @@
-/* Reset default margins/padding */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+:root { color-scheme: dark; }
 
-html, body {
-  width: 100%;
-  height: 100%;
+body {
+  margin: 0;
   background: #000;
   color: #fff;
-  font-family: sans-serif;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   overflow: hidden;
 }
 
-/* Container for video + overlay */
-#container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-/* Video fills the screen */
-#video {
+#video, #overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
   object-fit: cover;
 }
 
-/* Overlay matches video size */
-#overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
+#startBtn {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 14px 22px;
+  font-size: 18px;
+  background: linear-gradient(135deg, #00ff7f, #00d4ff);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  transition: transform 0.2s ease;
 }
 
-/* Title and instructions */
-h1 {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 1.2rem;
-  background: rgba(0,0,0,0.5);
-  padding: 4px 8px;
-  border-radius: 4px;
+#startBtn:active {
+  transform: translate(-50%, -50%) scale(0.96);
 }
 
-#instructions {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.9rem;
+#hud {
+  position: fixed;
+  top: 12px; left: 12px; right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   background: rgba(0,0,0,0.5);
-  padding: 4px 8px;
-  border-radius: 4px;
-  color: #ccc;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  backdrop-filter: blur(6px);
+}
+
+#beepFlash {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ff4444;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+#beepFlash.active {
+  opacity: 1;
+  box-shadow: 0 0 10px #ff4444;
 }
