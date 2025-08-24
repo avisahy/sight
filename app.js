@@ -1,3 +1,4 @@
+const startCameraBtn = document.getElementById('startCameraBtn');
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const captureBtn = document.getElementById('captureBtn');
@@ -12,29 +13,33 @@ const dirSelect = document.getElementById('dirSelect');
 
 let availableVoices = [];
 
-// Load voices
+// Load voices for speech synthesis
 function loadVoices() {
   availableVoices = speechSynthesis.getVoices();
 }
 speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
-// Start camera
-navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-  .then(stream => {
-    video.srcObject = stream;
-  })
-  .catch(err => {
-    console.error('Camera error:', err);
-    alert('Unable to access camera.');
-  });
+// Start camera on button click (triggers mobile permission prompt)
+startCameraBtn.addEventListener('click', () => {
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(stream => {
+      video.srcObject = stream;
+      video.hidden = false;
+      captureBtn.hidden = false;
+      startCameraBtn.hidden = true;
+    })
+    .catch(err => {
+      console.error('Camera error:', err);
+      alert('Unable to access camera. Please check permissions.');
+    });
+});
 
-// Capture frame and run OCR
+// Capture frame from video and run OCR
 captureBtn.addEventListener('click', async () => {
   const langs = Array.from(document.querySelectorAll('input[name="lang"]:checked')).map(cb => cb.value);
   if (!langs.length) return alert('Select at least one language.');
 
-  // Draw current video frame to canvas
   const ctx = canvas.getContext('2d');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
@@ -68,7 +73,7 @@ captureBtn.addEventListener('click', async () => {
   }
 });
 
-// Copy
+// Copy text
 copyBtn.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(output.value);
@@ -78,12 +83,12 @@ copyBtn.addEventListener('click', async () => {
   }
 });
 
-// Clear
+// Clear text
 clearBtn.addEventListener('click', () => {
   output.value = '';
 });
 
-// Speak
+// Speak text aloud
 speakBtn.addEventListener('click', () => {
   const text = output.value.trim();
   if (!text) return alert('No text to speak.');
@@ -91,6 +96,7 @@ speakBtn.addEventListener('click', () => {
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
 
+  // Detect Hebrew characters and set language/voice
   if (/[\u0590-\u05FF]/.test(text)) {
     utterance.lang = 'he-IL';
     const hebVoice = availableVoices.find(v => v.lang.startsWith('he'));
@@ -106,12 +112,12 @@ speakBtn.addEventListener('click', () => {
   speechSynthesis.speak(utterance);
 });
 
-// Direction change
+// Change text direction manually
 dirSelect.addEventListener('change', () => {
   output.setAttribute('dir', dirSelect.value);
 });
 
-// Helpers
+// Helper functions
 function showProgress(show, pct = null, text = '') {
   progressWrap.hidden = !show;
   if (pct !== null) progressBar.style.width = `${pct}%`;
