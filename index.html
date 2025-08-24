@@ -3,52 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Beep on detection (step 1)</title>
-  <style>
-    :root { color-scheme: dark; }
-    body {
-      margin: 0;
-      background: #000;
-      color: #fff;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      overflow: hidden;
-    }
-    #video, #overlay {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-    }
-    #startBtn {
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 14px 22px;
-      font-size: 18px;
-      background: #00ff7f;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      z-index: 10;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    }
-    #hint {
-      position: fixed;
-      bottom: 12px; left: 12px; right: 12px;
-      background: rgba(0,0,0,0.6);
-      padding: 10px 12px;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-  </style>
+  <title>Object Detection Beep</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <button id="startBtn">Start camera</button>
   <video id="video" autoplay muted playsinline></video>
   <canvas id="overlay"></canvas>
-  <div id="hint">Step 1: Beep when any object is detected. Press “Start camera” to unlock audio.</div>
+
+  <div id="hud" style="display:none;">
+    <div>📷 Object Detection Active</div>
+    <div id="beepFlash"></div>
+  </div>
 
   <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
