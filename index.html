@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Tropical Left-Fall Bridge Game</title>
+<title>Tropical Left-Fall Bridge Game with Waves</title>
 <style>
   body {
     margin: 0;
@@ -38,7 +38,8 @@ const colors = {
   islandEdge: '#c2a178',
   water: '#00bcd4',
   palmTrunk: '#8b5a2b',
-  palmLeaves: '#228b22'
+  palmLeaves: '#228b22',
+  wave: 'rgba(255,255,255,0.3)'
 };
 
 let platforms = [];
@@ -46,6 +47,7 @@ let stick = { baseX: 0, length: 0, angle: Math.PI, rotateSpeed: Math.PI, growing
 let player = { x: 0, y: 0, size: 20, walking: false };
 let state = 'waiting';
 let score = 0;
+let waveOffset = 0;
 
 function init() {
   platforms = [
@@ -96,6 +98,25 @@ function drawPlayer() {
   ctx.fillRect(player.x, player.y, player.size, 5);
 }
 
+function drawWaves() {
+  ctx.fillStyle = colors.water;
+  ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+
+  ctx.strokeStyle = colors.wave;
+  ctx.lineWidth = 2;
+  const waveHeight = 8;
+  const waveLength = 50;
+  const speed = 2;
+
+  waveOffset += speed;
+  ctx.beginPath();
+  for (let x = 0; x <= W; x++) {
+    const y = GROUND_Y + Math.sin((x + waveOffset) / waveLength) * waveHeight;
+    ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
 function draw() {
   // Sky
   const grad = ctx.createLinearGradient(0, 0, 0, H);
@@ -104,9 +125,8 @@ function draw() {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
-  // Water
-  ctx.fillStyle = colors.water;
-  ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+  // Water with waves
+  drawWaves();
 
   // Platforms
   platforms.forEach(drawPlatform);
