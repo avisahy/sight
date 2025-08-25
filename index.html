@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Tropical Right-Fall Bridge Game with Waves, Player Fall & Splash</title>
+<title>Tropical Right-Fall Bridge Game</title>
 <style>
   body {
     margin: 0;
@@ -41,7 +41,7 @@ const colors = {
 
 let platforms = [];
 let stick = { baseX: 0, length: 0, angle: 0, rotateSpeed: Math.PI };
-let player = { x: 0, y: 0, size: 20, walking: false, falling: false, vy: 0 };
+let player = { x: 0, y: 0, size: 20, walking: false, falling: false, vy: 0, speed: 200, toX: 0, success: false };
 let state = 'waiting';
 let score = 0;
 let waveOffset = 0;
@@ -66,7 +66,13 @@ function init() {
   score = 0;
   state = 'waiting';
 }
-init();
+
+function spawnNextPlatform() {
+  const last = platforms[platforms.length - 1];
+  const gap = 100 + Math.random() * 200;
+  const w = 50 + Math.random() * 50;
+  platforms.push({ x: last.x + last.w + gap, w });
+}
 
 function drawPlatform(p) {
   const top = GROUND_Y - 100;
@@ -110,9 +116,9 @@ function drawWaves() {
   ctx.lineWidth = 2;
   const waveHeight = 8;
   const waveLength = 50;
-  const speed = 2;
+  const speed = 60; // px per second phase shift
 
-  waveOffset += speed; // subtle, frame-based
+  waveOffset += speed * dtGlobal; // use dt to keep it smooth
   ctx.beginPath();
   for (let x = 0; x <= W; x++) {
     const y = GROUND_Y + Math.sin((x + waveOffset) / waveLength) * waveHeight;
@@ -176,17 +182,17 @@ function update(dt) {
     } else {
       if (player.success) {
         score++;
-        const dx = 50 - platforms[0].x; // keep start island at x=50
+        // Keep the new start island at x=50
+        const dx = 50 - platforms[0].x;
         platforms.forEach(p => p.x += dx);
         stick.baseX += dx;
         player.x += dx;
 
+        // Remove crossed island, add a new one to the right
         platforms.shift();
-        const last = platforms[platforms.length - 1];
-        const gap = 100 + Math.random() * 200;
-        const w = 50 + Math.random() * 50;
-        platforms.push({ x: last.x + last.w + gap, w });
+        spawnNextPlatform();
 
+        // Reset stick and wait
         stick.length = 0;
         stick.angle = 0;
         stick.baseX = platforms[0].x + platforms[0].w;
@@ -251,9 +257,11 @@ function createSplash(x, y) {
 }
 
 let lastTime = 0;
+let dtGlobal = 0;
 function loop(t) {
   if (!lastTime) lastTime = t;
-  const dt = (t - lastTime) / 1000;
+  dtGlobal = (t - lastTime) / 1000;
+  const dt = dtGlobal;
   lastTime = t;
 
   update(dt);
@@ -281,7 +289,14 @@ window.addEventListener('resize', () => {
   canvas.width = W;
   canvas.height = H;
   GROUND_Y = H * 0.75;
+  // Keep player standing on top if we are waiting
+  if (state === 'waiting') {
+    player.y = (GROUND_Y - 100) - player.size;
+  }
 });
+
+// Start
+init();
 </script>
 </body>
 </html>
