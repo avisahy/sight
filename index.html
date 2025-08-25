@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Tropical Right-Fall Bridge Game</title>
+<title>Tropical Right‑Fall Bridge Game</title>
 <style>
   body {
     margin: 0;
@@ -162,12 +162,18 @@ function update(dt) {
     stick.angle += stick.rotateSpeed * dt;
     if (stick.angle >= Math.PI / 2) {
       stick.angle = Math.PI / 2;
-      const endX = stick.baseX + Math.cos(stick.angle) * stick.length;
+
+      // ✅ Correct horizontal reach calculation
+      const endX = stick.baseX + Math.sin(stick.angle) * stick.length;
+
       const target = platforms[1];
       const success = endX >= target.x && endX <= target.x + target.w;
+
       state = 'walking';
       player.walking = true;
-      player.toX = success ? target.x + target.w - player.size : endX - player.size;
+      player.toX = success
+        ? target.x + target.w - player.size
+        : endX - player.size;
       player.success = success;
     }
   } else if (state === 'walking') {
@@ -250,7 +256,7 @@ function loop(t) {
   requestAnimationFrame(loop);
 }
 
-// Handle input
+// Mouse controls
 window.addEventListener('mousedown', () => {
   if (state === 'waiting') {
     state = 'growing';
@@ -263,7 +269,22 @@ window.addEventListener('mouseup', () => {
   }
 });
 
-// Resize handling
+// Touch controls (for mobile)
+window.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (state === 'waiting') {
+    state = 'growing';
+  }
+}, { passive: false });
+
+window.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  if (state === 'growing') {
+    state = 'rotating';
+  }
+}, { passive: false });
+
+// Handle window resize
 window.addEventListener('resize', () => {
   W = window.innerWidth;
   H = window.innerHeight;
