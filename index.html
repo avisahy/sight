@@ -1,573 +1,202 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Island Bridge</title>
-  <style>
-    :root {
-      color-scheme: light dark;
-    }
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      height: 100%;
-      background: #87ceeb;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
-      touch-action: none; /* prevent scroll while holding */
-      -webkit-user-select: none;
-      user-select: none;
-    }
-    canvas {
-      display: block;
-      width: 100vw;
-      height: 100vh;
-      cursor: pointer;
-    }
-    .ui {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
-    }
-    .topbar {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      margin-top: 8px;
-    }
-    .score {
-      background: rgba(0,0,0,0.3);
-      color: #fff;
-      padding: 8px 14px;
-      border-radius: 999px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      font-size: 16px;
-      backdrop-filter: blur(6px);
-    }
-    .center {
-      display: flex;
-      flex: 1;
-      align-items: center;
-      justify-content: center;
-    }
-    .msg {
-      pointer-events: auto;
-      background: rgba(255,255,255,0.9);
-      color: #111;
-      padding: 14px 18px;
-      border-radius: 12px;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      max-width: 90%;
-    }
-    .msg h1 {
-      margin: 0 0 8px;
-      font-size: 20px;
-    }
-    .msg p {
-      margin: 0;
-      font-size: 14px;
-      opacity: 0.85;
-    }
-    .btn {
-      pointer-events: auto;
-      background: #111;
-      color: #fff;
-      padding: 12px 18px;
-      border-radius: 999px;
-      font-weight: 700;
-      border: none;
-      margin-top: 12px;
-      font-size: 14px;
-    }
-    .footer {
-      width: 100%;
-      text-align: center;
-      color: rgba(0,0,0,0.6);
-      font-size: 12px;
-      margin-bottom: 8px;
-      mix-blend-mode: multiply;
-    }
-    @media (prefers-color-scheme: dark) {
-      .msg { background: rgba(0,0,0,0.7); color: #fff; }
-      .score { background: rgba(255,255,255,0.1); color: #fff; }
-      .btn { background: #fff; color: #111; }
-      .footer { color: rgba(255,255,255,0.7); mix-blend-mode: normal; }
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Tropical Left-Fall Bridge Game</title>
+<style>
+  body {
+    margin: 0;
+    background: linear-gradient(#ffcc70, #ffecd2);
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+  }
+</style>
 </head>
 <body>
-  <canvas id="game"></canvas>
+<canvas id="game"></canvas>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let W = window.innerWidth;
+let H = window.innerHeight;
+canvas.width = W;
+canvas.height = H;
 
-  <div class="ui">
-    <div class="topbar">
-      <div class="score" id="score">Score: 0</div>
-    </div>
-    <div class="center" id="center">
-      <div class="msg" id="message">
-        <h1>Island Bridge</h1>
-        <p>Press and hold to grow a bridge. Release to drop it. Reach the next island to score.</p>
-        <button class="btn" id="startBtn">Start</button>
-      </div>
-    </div>
-    <div class="footer">Hold anywhere. Works on touch and mouse.</div>
-  </div>
+const GROUND_Y = H * 0.75;
 
-  <script>
-    (() => {
-      const canvas = document.getElementById('game');
-      const ctx = canvas.getContext('2d');
-      const scoreEl = document.getElementById('score');
-      const centerEl = document.getElementById('center');
-      const messageEl = document.getElementById('message');
-      const startBtn = document.getElementById('startBtn');
+const colors = {
+  skyTop: '#ffcc70',
+  skyBottom: '#ffecd2',
+  pillar: '#c2b280',
+  pillarTop: '#e6d8ad',
+  stick: '#5b3a29',
+  player: '#2b2b2b',
+  accent: '#ff6f61',
+  island: '#d2b48c',
+  islandEdge: '#c2a178',
+  water: '#00bcd4',
+  palmTrunk: '#8b5a2b',
+  palmLeaves: '#228b22'
+};
 
-      let DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
-      let W = 0, H = 0, GROUND_Y = 0;
+let platforms = [];
+let stick = { baseX: 0, length: 0, angle: Math.PI, rotateSpeed: Math.PI, growing: false };
+let player = { x: 0, y: 0, size: 20, walking: false };
+let state = 'waiting';
+let score = 0;
 
-      const state = {
-        mode: 'menu', // 'ready','growing','rotating','walking','shifting','gameover'
-        score: 0,
-        best: 0
-      };
+function init() {
+  platforms = [
+    { x: 50, w: 60 },
+    { x: 200, w: 60 }
+  ];
+  stick.baseX = platforms[0].x + platforms[0].w;
+  stick.length = 0;
+  stick.angle = Math.PI; // straight up, facing left
+  player.x = platforms[0].x + platforms[0].w - player.size;
+  player.y = GROUND_Y - player.size;
+  score = 0;
+  state = 'waiting';
+}
+init();
 
-      const player = {
-        x: 0,
-        y: 0,
-        r: 10,
-        eyeBlink: 0,
-      };
+function drawPlatform(p) {
+  const top = GROUND_Y - 100;
+  ctx.fillStyle = colors.island;
+  ctx.fillRect(p.x, top, p.w, 100);
+  ctx.fillStyle = colors.islandEdge;
+  ctx.fillRect(p.x, GROUND_Y, p.w, H - GROUND_Y);
 
-      const stick = {
-        baseX: 0,
-        length: 0,
-        angle: 0, // 0 = up, PI/2 = right
-        growSpeed: 380, // px/s
-        rotateSpeed: Math.PI * 2.2, // rad/s
-        falling: false
-      };
+  // Palm tree
+  ctx.fillStyle = colors.palmTrunk;
+  ctx.fillRect(p.x + p.w/2 - 2, top - 40, 4, 40);
+  ctx.fillStyle = colors.palmLeaves;
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    ctx.ellipse(p.x + p.w/2, top - 40, 20, 8, (Math.PI * 2 / 5) * i, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
 
-      const platforms = [];
-      const PLATFORM_MIN_W = 50;
-      const PLATFORM_MAX_W = 150;
-      const GAP_MIN = 60;
-      const GAP_MAX = 220;
+function drawStick() {
+  ctx.save();
+  ctx.translate(stick.baseX, GROUND_Y - 100);
+  ctx.rotate(stick.angle);
+  ctx.fillStyle = colors.stick;
+  ctx.fillRect(0, -2, stick.length, 4);
+  ctx.restore();
+}
 
-      const colors = {
-        skyTop: '#a1d8ff',
-        skyBottom: '#e9f7ff',
-        pillar: '#2b2b2b',
-        pillarTop: '#3a3a3a',
-        stick: '#111',
-        player: '#111',
-        accent: '#ff455b',
-        island: '#222',
-        islandEdge: '#333'
-      };
+function drawPlayer() {
+  ctx.fillStyle = colors.player;
+  ctx.fillRect(player.x, player.y, player.size, player.size);
+  ctx.fillStyle = colors.accent;
+  ctx.fillRect(player.x, player.y, player.size, 5);
+}
 
-      function rand(min, max) {
-        return Math.random() * (max - min) + min;
-      }
+function draw() {
+  // Sky
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, colors.skyTop);
+  grad.addColorStop(1, colors.skyBottom);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
 
-      function resize() {
-        DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
-        canvas.width = Math.floor(window.innerWidth * DPR);
-        canvas.height = Math.floor(window.innerHeight * DPR);
-        canvas.style.width = '100vw';
-        canvas.style.height = '100vh';
-        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-        W = window.innerWidth;
-        H = window.innerHeight;
-        GROUND_Y = Math.round(H * 0.78);
-        draw(); // immediate refresh
-      }
+  // Water
+  ctx.fillStyle = colors.water;
+  ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
 
-      function resetGame() {
-        state.score = 0;
-        platforms.length = 0;
+  // Platforms
+  platforms.forEach(drawPlatform);
 
-        const firstW = 90;
-        const firstX = 60;
-        platforms.push({ x: firstX, w: firstW });
-        while (platforms.length < 4) {
-          addPlatform();
-        }
+  // Stick
+  drawStick();
 
-        player.r = Math.max(7, Math.min(12, Math.round(H * 0.015)));
-        player.x = platforms[0].x + platforms[0].w;
-        player.y = GROUND_Y;
-        player.eyeBlink = 0;
+  // Player
+  drawPlayer();
 
-        stick.baseX = player.x;
-        stick.length = 0;
-        stick.angle = 0;
-        stick.falling = false;
+  // Score
+  ctx.fillStyle = '#000';
+  ctx.font = '20px sans-serif';
+  ctx.fillText('Score: ' + score, 20, 30);
+}
 
-        updateScore();
-        state.mode = 'ready';
-      }
-
-      function addPlatform() {
+function update(dt) {
+  if (state === 'growing') {
+    stick.length += 200 * dt;
+  } else if (state === 'rotating') {
+    stick.angle -= stick.rotateSpeed * dt;
+    if (stick.angle <= Math.PI / 2) {
+      stick.angle = Math.PI / 2;
+      const endX = stick.baseX - stick.length;
+      const target = platforms[1];
+      const success = endX <= target.x + target.w && endX >= target.x;
+      state = 'walking';
+      player.walking = true;
+      player.toX = success ? target.x + target.w - player.size : endX - player.size;
+      player.speed = 200;
+      player.success = success;
+    }
+  } else if (state === 'walking') {
+    if (player.x > player.toX) {
+      player.x -= player.speed * dt;
+    } else {
+      if (player.success) {
+        score++;
+        const dx = platforms[0].x - 50;
+        platforms.forEach(p => p.x -= dx);
+        stick.baseX -= dx;
+        player.x -= dx;
+        platforms.shift();
         const last = platforms[platforms.length - 1];
-        const baseX = last.x + last.w;
-        const gap = rand(GAP_MIN, GAP_MAX);
-        const w = rand(PLATFORM_MIN_W, PLATFORM_MAX_W);
-        const x = Math.round(baseX + gap);
-        platforms.push({ x, w: Math.round(w) });
+        const gap = 100 + Math.random() * 200;
+        const w = 50 + Math.random() * 50;
+        platforms.push({ x: last.x - gap - w, w });
+        stick.length = 0;
+        stick.angle = Math.PI;
+        stick.baseX = platforms[0].x;
+        state = 'waiting';
+      } else {
+        state = 'falling';
       }
+    }
+  } else if (state === 'falling') {
+    player.y += 300 * dt;
+    if (player.y > H) {
+      init();
+    }
+  }
+}
 
-      function updateScore() {
-        scoreEl.textContent = `Score: ${state.score}`;
-      }
+let lastTime = null;
+function loop(timestamp) {
+  if (!lastTime) lastTime = timestamp;
+  const dt = (timestamp - lastTime) / 1000;
+  lastTime = timestamp;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
 
-      // Input
-      let holding = false;
-
-      function onPress() {
-        if (state.mode === 'menu') {
-          centerEl.style.display = 'none';
-          resetGame();
-          return;
-        }
-        if (state.mode === 'gameover') {
-          centerEl.style.display = 'none';
-          resetGame();
-          return;
-        }
-        if (state.mode === 'ready') {
-          holding = true;
-          stick.length = 0;
-          stick.angle = 0;
-          stick.falling = false;
-          stick.baseX = player.x;
-          state.mode = 'growing';
-        }
-      }
-
-      function onRelease() {
-        if (!holding) return;
-        holding = false;
-        if (state.mode === 'growing') {
-          state.mode = 'rotating';
-        }
-      }
-
-      // Events
-      window.addEventListener('resize', resize);
-      window.addEventListener('orientationchange', resize);
-
-      canvas.addEventListener('mousedown', onPress);
-      canvas.addEventListener('mouseup', onRelease);
-      canvas.addEventListener('mouseleave', onRelease);
-
-      canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onPress(); }, { passive: false });
-      canvas.addEventListener('touchend', (e) => { e.preventDefault(); onRelease(); }, { passive: false });
-      canvas.addEventListener('touchcancel', (e) => { e.preventDefault(); onRelease(); }, { passive: false });
-
-      startBtn.addEventListener('click', () => {
-        centerEl.style.display = 'none';
-        resetGame();
-      });
-
-      // Game loop
-      let lastTime = performance.now();
-
-      function loop(t) {
-        const dt = Math.min(1/30, (t - lastTime) / 1000);
-        lastTime = t;
-
-        update(dt);
-        draw();
-
-        requestAnimationFrame(loop);
-      }
-
-      function update(dt) {
-        // Idle sky vibe
-        player.eyeBlink -= dt;
-        if (player.eyeBlink < -rand(2, 5)) {
-          player.eyeBlink = 0.12;
-        }
-
-        switch (state.mode) {
-          case 'growing': {
-            stick.length += stick.growSpeed * dt;
-            break;
-          }
-          case 'rotating': {
-            stick.angle += stick.rotateSpeed * dt;
-            if (stick.angle >= Math.PI / 2) {
-              stick.angle = Math.PI / 2;
-              // Evaluate success
-              const endX = stick.baseX + Math.cos(stick.angle) * stick.length;
-              const target = platforms[1];
-              const minX = target.x;
-              const maxX = target.x + target.w;
-              const success = endX >= minX && endX <= maxX;
-
-              if (success) {
-                // bonus if near center
-                const center = target.x + target.w / 2;
-                const perfectRange = Math.max(8, target.w * 0.08);
-                if (Math.abs(endX - center) <= perfectRange) {
-                  state.score += 2; // sweet spot bonus
-                } else {
-                  state.score += 1;
-                }
-                updateScore();
-              }
-
-              // Begin walking regardless; outcome depends on success
-              walking.toX = success ? Math.min(endX, target.x + target.w) : stick.baseX + stick.length;
-              walking.progress = 0;
-              walking.duration = Math.max(0.35, Math.min(0.8, Math.abs(walking.toX - player.x) / 500));
-              walking.success = success;
-              state.mode = 'walking';
-            }
-            break;
-          }
-          case 'walking': {
-            walking.progress += dt / walking.duration;
-            const p = Math.min(1, walking.progress);
-            // Ease
-            const e = p < 0.5 ? 2*p*p : -1 + (4 - 2*p)*p;
-            player.x = lerp(stick.baseX, walking.toX, e);
-            // y stays on ground until near falling
-            if (p >= 1) {
-              if (walking.success) {
-                // Snap to target platform edge
-                player.x = Math.min(walking.toX, platforms[1].x + platforms[1].w - 2);
-                // Shift world so player stands at edge of new platform
-                const shiftBy = platforms[1].x + platforms[1].w - (platforms[0].x + platforms[0].w);
-                shifting.offset = 0;
-                shifting.total = shiftBy;
-                shifting.duration = Math.max(0.35, Math.min(0.9, shiftBy / 600));
-                shifting.progress = 0;
-                state.mode = 'shifting';
-              } else {
-                // Begin fall
-                falling.vy = 0;
-                falling.y = player.y;
-                falling.progress = 0;
-                stick.falling = true;
-                state.mode = 'gameover';
-                showGameOver();
-              }
-            }
-            break;
-          }
-          case 'shifting': {
-            shifting.progress += dt / shifting.duration;
-            const p = Math.min(1, shifting.progress);
-            const e = easeInOutCubic(p);
-            const dx = lerp(0, shifting.total, e) - shifting.offset;
-            shifting.offset += dx;
-            // Move everything left by dx
-            for (const pl of platforms) pl.x -= dx;
-            player.x -= dx;
-            stick.baseX -= dx;
-
-            if (p >= 1) {
-              // Remove first platform, add a new one
-              platforms.shift();
-              while (platforms.length < 4) addPlatform();
-              // Reset for next round
-              stick.length = 0;
-              stick.angle = 0;
-              stick.falling = false;
-              state.mode = 'ready';
-            }
-            break;
-          }
-          case 'ready':
-          case 'menu':
-          case 'gameover':
-          default:
-            break;
-        }
-      }
-
-      const walking = {
-        toX: 0,
-        progress: 0,
-        duration: 0.6,
-        success: false
-      };
-
-      const shifting = {
-        offset: 0,
-        total: 0,
-        duration: 0.6,
-        progress: 0
-      };
-
-      const falling = { vy: 0, y: 0, progress: 0 };
-
-      function showGameOver() {
-        state.best = Math.max(state.best, state.score);
-        setTimeout(() => {
-          centerEl.style.display = 'flex';
-          messageEl.innerHTML = `
-            <h1>Game Over</h1>
-            <p>Score: ${state.score} &nbsp;•&nbsp; Best: ${state.best}</p>
-            <button class="btn" id="restartBtn">Try Again</button>
-          `;
-          const btn = document.getElementById('restartBtn');
-          btn.addEventListener('click', () => {
-            centerEl.style.display = 'none';
-            resetGame();
-          }, { once: true });
-        }, 450);
-      }
-
-      function draw() {
-        // Sky background
-        const grad = ctx.createLinearGradient(0, 0, 0, H);
-        grad.addColorStop(0, colors.skyTop);
-        grad.addColorStop(1, colors.skyBottom);
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H);
-
-        // Subtle distant hills
-        drawHills();
-
-        // Ground shadow strip
-        ctx.fillStyle = 'rgba(0,0,0,0.08)';
-        ctx.fillRect(0, GROUND_Y + 1, W, H - GROUND_Y);
-
-        // Platforms
-        for (const pl of platforms) drawPlatform(pl.x, pl.w);
-
-        // Stick
-        drawStick();
-
-        // Player
-        drawPlayer();
-
-        // Hint when ready
-        if (state.mode === 'ready') {
-          ctx.save();
-          ctx.globalAlpha = 0.6;
-          ctx.fillStyle = '#111';
-          ctx.font = '14px system-ui, -apple-system, Segoe UI, Roboto, Arial';
-          ctx.textAlign = 'center';
-          ctx.fillText('Hold to grow. Release to drop.', Math.round(player.x - 20), Math.round(GROUND_Y - 60));
-          ctx.restore();
-        }
-
-        // If gameover and falling, animate fall
-        if (state.mode === 'gameover' && stick.falling) {
-          // Extend simple fall animation visually
-          falling.vy += 1600 / 60 / DPR; // not time-accurate, just visual
-          player.y += falling.vy * (1/60);
-          if (player.y > H + 40) {
-            stick.falling = false;
-          }
-        }
-      }
-
-      function drawPlatform(x, w) {
-        const top = GROUND_Y;
-        const height = H - top;
-        // Pillar
-        ctx.fillStyle = colors.pillar;
-        ctx.fillRect(Math.round(x), Math.round(top), Math.round(w), Math.round(height));
-        // Top
-        ctx.fillStyle = colors.island;
-        ctx.fillRect(Math.round(x), Math.round(top - 14), Math.round(w), 14);
-        // Edge highlight
-        ctx.fillStyle = colors.islandEdge;
-        ctx.fillRect(Math.round(x), Math.round(top - 14), Math.round(w), 4);
-      }
-
-      function drawStick() {
-        if (state.mode === 'ready' && stick.length === 0) return;
-        if (state.mode === 'menu') return;
-
-        ctx.save();
-        ctx.translate(stick.baseX, GROUND_Y);
-        ctx.rotate(-stick.angle);
-        ctx.strokeStyle = colors.stick;
-        ctx.lineWidth = 4;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(0, -stick.length);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      function drawPlayer() {
-        const r = player.r;
-        const y = Math.min(player.y, GROUND_Y - r);
-        ctx.save();
-        // Body
-        ctx.fillStyle = colors.player;
-        ctx.beginPath();
-        ctx.arc(player.x - r * 0.6, y - r * 0.8, r, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Eye
-        const blink = player.eyeBlink > 0 ? 0.2 : 1;
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.ellipse(player.x - r * 0.9, y - r * 0.95, r * 0.33, r * 0.33 * blink, 0, 0, Math.PI*2);
-        ctx.fill();
-        ctx.fillStyle = '#111';
-        ctx.beginPath();
-        ctx.arc(player.x - r * 0.85, y - r, r * 0.15, 0, Math.PI*2);
-        ctx.fill();
-
-        // Accent scarf
-        ctx.fillStyle = colors.accent;
-        ctx.fillRect(player.x - r*1.5, y - r*0.2, r*1.0, r*0.35);
-        ctx.restore();
-      }
-
-      function drawHills() {
-        ctx.save();
-        ctx.globalAlpha = 0.25;
-        ctx.fillStyle = '#6bb1df';
-        const baseY = Math.round(GROUND_Y + 40);
-        ctx.beginPath();
-        ctx.moveTo(0, H);
-        for (let x = 0; x <= W; x += 4) {
-          const y = baseY - Math.sin(x * 0.01) * 12 - 10;
-          ctx.lineTo(x, y);
-        }
-        ctx.lineTo(W, H);
-        ctx.closePath();
-        ctx.fill();
-        ctx.globalAlpha = 0.18;
-        ctx.fillStyle = '#5aa4d8';
-        ctx.beginPath();
-        ctx.moveTo(0, H);
-        for (let x = 0; x <= W; x += 4) {
-          const y = baseY - Math.cos(x * 0.013 + 1.3) * 16 + 12;
-          ctx.lineTo(x, y);
-        }
-        ctx.lineTo(W, H);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-      }
-
-      // Helpers
-      function lerp(a, b, t) { return a + (b - a) * t; }
-      function easeInOutCubic(t) {
-        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-      }
-
-      // Boot
-      resize();
-      requestAnimationFrame(loop);
-    })();
-  </script>
+window.addEventListener('mousedown', () => {
+  if (state === 'waiting') {
+    state = 'growing';
+  }
+});
+window.addEventListener('mouseup', () => {
+  if (state === 'growing') {
+    state = 'rotating';
+  }
+});
+window.addEventListener('resize', () => {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W;
+  canvas.height = H;
+});
+</script>
 </body>
 </html>
