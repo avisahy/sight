@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Tropical LTR Bridge Game with Waves</title>
+<title>Tropical Right-Fall Bridge Game with Waves</title>
 <style>
   body {
     margin: 0;
@@ -49,12 +49,12 @@ let waveOffset = 0;
 
 function init() {
   platforms = [
-    { x: 50, w: 60 }, // starting island on left
-    { x: 200, w: 60 } // target island to the right
+    { x: 50, w: 60 },  // starting island on left
+    { x: 200, w: 60 }  // target island to the right
   ];
-  stick.baseX = platforms[0].x + platforms[0].w; // right edge of starting island
+  stick.baseX = platforms[0].x + platforms[0].w; // right edge of start island
   stick.length = 0;
-  stick.angle = 0; // straight up, facing right
+  stick.angle = 0; // vertical, facing right
   player.x = platforms[0].x + platforms[0].w - player.size; // player at right edge
   player.y = (GROUND_Y - 100) - player.size; // on top of island
   score = 0;
