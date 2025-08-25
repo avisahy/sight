@@ -1,538 +1,572 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Things To Do Nearby</title>
-  <meta name="theme-color" content="#0b5fff" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Island Bridge</title>
   <style>
-    :root{
-      --bg:#0b0c10;
-      --card:#12141a;
-      --ink:#e9eefb;
-      --muted:#a7b1c2;
-      --brand:#0b5fff;
-      --accent:#14cba8;
-      --danger:#ff4757;
-      --chip:#1a2233;
-      --border:#1f2533;
-      --shadow: 0 6px 20px rgba(0,0,0,0.35);
-      --radius:14px;
+    :root {
+      color-scheme: light dark;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      background:linear-gradient(180deg,#0a0b10 0%, #0b0c10 60%) fixed;
-      color:var(--ink);
-      font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #87ceeb;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+      touch-action: none; /* prevent scroll while holding */
+      -webkit-user-select: none;
+      user-select: none;
     }
-    header{
-      position:sticky; top:0; z-index:100;
-      background:rgba(10,11,16,0.8); backdrop-filter:saturate(1.4) blur(12px);
-      border-bottom:1px solid var(--border);
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: pointer;
     }
-    .bar{
-      display:flex; align-items:center; gap:12px;
-      padding:14px 16px;
+    .ui {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
     }
-    .title{
-      font-weight:700; letter-spacing:.2px; font-size:18px;
+    .topbar {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin-top: 8px;
     }
-    .tagline{ color:var(--muted); font-size:12px; }
-    .controls{
-      display:flex; gap:10px; padding:10px 16px 14px; flex-wrap:wrap; border-top:1px solid var(--border);
+    .score {
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      font-size: 16px;
+      backdrop-filter: blur(6px);
     }
-    .chip{
-      border:1px solid var(--border);
-      background:var(--chip);
-      color:var(--ink);
-      padding:8px 12px; border-radius:999px; cursor:pointer; user-select:none;
-      font-weight:600; font-size:14px;
-      transition:all .15s ease;
+    .center {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      justify-content: center;
     }
-    .chip:hover{ border-color:#2b3750 }
-    .chip.active{ background:var(--brand); border-color:transparent; color:white; }
-    .row{ display:flex; gap:10px; width:100%; }
-    .row > *{ flex:1 }
-    input, select, button{
-      width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border);
-      background:#0f121a; color:var(--ink); outline:none; transition:border-color .15s ease, background .2s ease;
-      font-weight:600;
+    .msg {
+      pointer-events: auto;
+      background: rgba(255,255,255,0.9);
+      color: #111;
+      padding: 14px 18px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      max-width: 90%;
     }
-    input::placeholder{ color:#6a7385; font-weight:500; }
-    button.primary{ background:var(--brand); border-color:transparent; color:white; }
-    button.secondary{ background:#121826; }
-    button:active{ transform: translateY(1px) }
-    main{ padding:14px 16px 80px; max-width:900px; margin:0 auto; }
-    .hint{ color:var(--muted); font-size:13px; margin:6px 2px 12px }
-    .results-meta{ color:var(--muted); font-size:13px; margin:8px 2px 14px }
-    .cards{ display:grid; grid-template-columns:1fr; gap:12px; }
-    @media (min-width:740px){
-      .cards{ grid-template-columns:1fr 1fr }
+    .msg h1 {
+      margin: 0 0 8px;
+      font-size: 20px;
     }
-    .card{
-      background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);
-      padding:14px; display:flex; gap:12px; align-items:flex-start;
+    .msg p {
+      margin: 0;
+      font-size: 14px;
+      opacity: 0.85;
     }
-    .avatar{
-      width:46px; height:46px; border-radius:12px; flex:0 0 46px;
-      display:grid; place-items:center; font-weight:800; color:white;
-      background:linear-gradient(135deg, var(--brand), #7b5cff);
+    .btn {
+      pointer-events: auto;
+      background: #111;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-weight: 700;
+      border: none;
+      margin-top: 12px;
+      font-size: 14px;
     }
-    .content{ flex:1; min-width:0 }
-    .name{ font-weight:800; letter-spacing:.2px; }
-    .meta{ color:var(--muted); font-size:13px; margin-top:4px }
-    .badges{ display:flex; gap:6px; margin-top:8px; flex-wrap:wrap }
-    .badge{
-      background:#0e1726; border:1px solid #243049; color:#c6d3ee;
-      padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700;
+    .footer {
+      width: 100%;
+      text-align: center;
+      color: rgba(0,0,0,0.6);
+      font-size: 12px;
+      margin-bottom: 8px;
+      mix-blend-mode: multiply;
     }
-    .actions{ display:flex; gap:10px; margin-top:10px; flex-wrap:wrap }
-    .btn{
-      display:inline-flex; gap:8px; align-items:center; justify-content:center;
-      padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:#0f1420;
-      color:var(--ink); font-weight:700; text-decoration:none; cursor:pointer;
+    @media (prefers-color-scheme: dark) {
+      .msg { background: rgba(0,0,0,0.7); color: #fff; }
+      .score { background: rgba(255,255,255,0.1); color: #fff; }
+      .btn { background: #fff; color: #111; }
+      .footer { color: rgba(255,255,255,0.7); mix-blend-mode: normal; }
     }
-    .btn.primary{ background:var(--brand); color:white; border-color:transparent }
-    .empty, .error{
-      background:#0f121a; border:1px dashed #2a3243; border-radius:14px; padding:18px; color:#b9c3d8;
-    }
-    .loader{
-      display:inline-flex; align-items:center; gap:10px; color:#c9d7ff; font-weight:700;
-    }
-    .dot{ width:8px; height:8px; border-radius:50%; background:var(--brand); animation:bounce 1s infinite alternate }
-    .dot:nth-child(2){ animation-delay:.2s } .dot:nth-child(3){ animation-delay:.4s }
-    @keyframes bounce{ to{ transform: translateY(-6px); opacity:.7 } }
-    footer{
-      position:fixed; bottom:0; left:0; right:0; padding:10px 12px; background:linear-gradient(180deg, rgba(10,11,16,0) 0%, rgba(10,11,16,.85) 30%, rgba(10,11,16,.95) 100%);
-      display:flex; gap:8px; justify-content:center; flex-wrap:wrap; border-top:1px solid var(--border);
-    }
-    .pill{ padding:6px 10px; border-radius:999px; background:#101621; color:#d7e1f7; border:1px solid #22314a; font-size:12px; }
-    .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;}
-    .small{ font-size:12px; color:#9db0d8 }
   </style>
 </head>
 <body>
-  <header>
-    <div class="bar">
-      <div>
-        <div class="title">Things To Do Nearby</div>
-        <div class="tagline">Find cinemas, restaurants, and kid-friendly spots around you</div>
+  <canvas id="game"></canvas>
+
+  <div class="ui">
+    <div class="topbar">
+      <div class="score" id="score">Score: 0</div>
+    </div>
+    <div class="center" id="center">
+      <div class="msg" id="message">
+        <h1>Island Bridge</h1>
+        <p>Press and hold to grow a bridge. Release to drop it. Reach the next island to score.</p>
+        <button class="btn" id="startBtn">Start</button>
       </div>
     </div>
-    <div class="controls">
-      <div class="chip active" data-category="movies">Movies</div>
-      <div class="chip" data-category="restaurants">Restaurants</div>
-      <div class="chip" data-category="kids">Kids</div>
-      <div class="chip" data-category="all">All</div>
-      <div class="row">
-        <select id="radius">
-          <option value="1000">1 km</option>
-          <option value="2000">2 km</option>
-          <option value="3000" selected>3 km</option>
-          <option value="5000">5 km</option>
-          <option value="10000">10 km</option>
-        </select>
-        <button class="secondary" id="useLocation">Use my location</button>
-      </div>
-      <div class="row">
-        <input id="address" placeholder="Or type an address, city, or landmark" />
-        <button class="primary" id="searchAddress">Find</button>
-      </div>
-    </div>
-  </header>
-
-  <main>
-    <div class="hint">Tip: Tap a category, set a radius, then use your location or enter an address.</div>
-    <div id="status"></div>
-    <div class="results-meta" id="meta"></div>
-    <div class="cards" id="results"></div>
-  </main>
-
-  <footer>
-    <div class="pill">Powered by OpenStreetMap via Overpass API</div>
-    <div class="pill">No sign-in or API keys required</div>
-  </footer>
+    <div class="footer">Hold anywhere. Works on touch and mouse.</div>
+  </div>
 
   <script>
-    // --- State ---
-    const state = {
-      lat: null,
-      lon: null,
-      category: 'movies',
-      radius: 3000, // meters
-      lastQueryTime: null
-    };
+    (() => {
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d');
+      const scoreEl = document.getElementById('score');
+      const centerEl = document.getElementById('center');
+      const messageEl = document.getElementById('message');
+      const startBtn = document.getElementById('startBtn');
 
-    // --- Elements ---
-    const chips = [...document.querySelectorAll('.chip')];
-    const radiusEl = document.getElementById('radius');
-    const useLocationBtn = document.getElementById('useLocation');
-    const addressEl = document.getElementById('address');
-    const searchAddressBtn = document.getElementById('searchAddress');
-    const resultsEl = document.getElementById('results');
-    const metaEl = document.getElementById('meta');
-    const statusEl = document.getElementById('status');
+      let DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+      let W = 0, H = 0, GROUND_Y = 0;
 
-    // --- Category definitions mapped to OSM tags ---
-    const CATEGORIES = {
-      movies: [
-        { k:'amenity', v:'cinema' }
-      ],
-      restaurants: [
-        { k:'amenity', v:'restaurant' },
-        { k:'amenity', v:'fast_food' },
-        { k:'amenity', v:'cafe' }
-      ],
-      kids: [
-        { k:'leisure', v:'playground' },
-        { k:'tourism', v:'theme_park' },
-        { k:'tourism', v:'zoo' },
-        { k:'tourism', v:'aquarium' },
-        { k:'amenity', v:'community_centre' }
-      ],
-      all: [
-        // A broader "things to do" sweep
-        { k:'amenity', v:'cinema' },
-        { k:'amenity', v:'restaurant' },
-        { k:'amenity', v:'fast_food' },
-        { k:'amenity', v:'cafe' },
-        { k:'amenity', v:'bar' },
-        { k:'amenity', v:'pub' },
-        { k:'amenity', v:'nightclub' },
-        { k:'leisure', v:'playground' },
-        { k:'leisure', v:'park' },
-        { k:'tourism', v:'theme_park' },
-        { k:'tourism', v:'zoo' },
-        { k:'tourism', v:'aquarium' },
-        { k:'tourism', v:'viewpoint' }
-      ]
-    };
+      const state = {
+        mode: 'menu', // 'ready','growing','rotating','walking','shifting','gameover'
+        score: 0,
+        best: 0
+      };
 
-    // Alternate Overpass endpoints for resiliency
-    const OVERPASS_ENDPOINTS = [
-      'https://overpass-api.de/api/interpreter',
-      'https://overpass.kumi.systems/api/interpreter',
-      'https://overpass.openstreetmap.ru/api/interpreter'
-    ];
+      const player = {
+        x: 0,
+        y: 0,
+        r: 10,
+        eyeBlink: 0,
+      };
 
-    // --- Utilities ---
-    function setStatus(html){
-      statusEl.innerHTML = html || '';
-    }
-    function clearResults(){
-      resultsEl.innerHTML = '';
-      metaEl.textContent = '';
-    }
-    function formatDistance(m){
-      if (m < 1000) return `${Math.round(m)} m`;
-      return `${(m/1000).toFixed(1)} km`;
-    }
-    function haversine(lat1, lon1, lat2, lon2){
-      const R = 6371e3;
-      const toRad = d => d * Math.PI/180;
-      const dLat = toRad(lat2 - lat1);
-      const dLon = toRad(lon2 - lon1);
-      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
-    }
-    function placeIcon(tagset){
-      // Lightweight icon seed based on category
-      if (tagset.amenity === 'cinema') return '🎬';
-      if (['restaurant','fast_food','cafe'].includes(tagset.amenity)) return '🍽️';
-      if (['bar','pub','nightclub'].includes(tagset.amenity)) return '🍸';
-      if (tagset.leisure === 'playground') return '🛝';
-      if (tagset.leisure === 'park') return '🌳';
-      if (tagset.tourism === 'theme_park') return '🎡';
-      if (tagset.tourism === 'zoo') return '🦓';
-      if (tagset.tourism === 'aquarium') return '🐠';
-      if (tagset.tourism === 'viewpoint') return '📸';
-      return '📍';
-    }
-    function buildAddress(tags){
-      const parts = [];
-      if (tags['addr:housenumber']) parts.push(tags['addr:housenumber']);
-      if (tags['addr:street']) parts.push(tags['addr:street']);
-      const line1 = parts.join(' ');
-      const cityParts = [tags['addr:city'] || tags['addr:town'] || tags['addr:village'] || '', tags['addr:postcode'] || ''].filter(Boolean);
-      const line2 = cityParts.join(' ');
-      return [line1, line2].filter(Boolean).join(', ');
-    }
-    function uniqueKey(lat, lon, name){
-      const latr = Math.round(lat*100000)/100000;
-      const lonr = Math.round(lon*100000)/100000;
-      return `${latr},${lonr}:${(name||'').toLowerCase()}`;
-    }
+      const stick = {
+        baseX: 0,
+        length: 0,
+        angle: 0, // 0 = up, PI/2 = right
+        growSpeed: 380, // px/s
+        rotateSpeed: Math.PI * 2.2, // rad/s
+        falling: false
+      };
 
-    // --- Overpass Query Builder ---
-    function buildOverpassQuery(lat, lon, radius, category){
-      const filters = CATEGORIES[category] || [];
-      // No filters? bail
-      if (!filters.length) return null;
+      const platforms = [];
+      const PLATFORM_MIN_W = 50;
+      const PLATFORM_MAX_W = 150;
+      const GAP_MIN = 60;
+      const GAP_MAX = 220;
 
-      const perTag = filters.map(({k,v}) => `
-        node["${k}"="${v}"](around:${radius},${lat},${lon});
-        way["${k}"="${v}"](around:${radius},${lat},${lon});
-        relation["${k}"="${v}"](around:${radius},${lat},${lon});
-      `).join('\n');
+      const colors = {
+        skyTop: '#a1d8ff',
+        skyBottom: '#e9f7ff',
+        pillar: '#2b2b2b',
+        pillarTop: '#3a3a3a',
+        stick: '#111',
+        player: '#111',
+        accent: '#ff455b',
+        island: '#222',
+        islandEdge: '#333'
+      };
 
-      // Limit output to keep results snappy
-      // out center gives a centroid for ways/relations
-      return `
-        [out:json][timeout:25];
-        (
-          ${perTag}
-        );
-        out tags center 200;
-      `;
-    }
+      function rand(min, max) {
+        return Math.random() * (max - min) + min;
+      }
 
-    async function fetchOverpass(query){
-      let lastErr;
-      for (const ep of OVERPASS_ENDPOINTS){
-        try{
-          const res = await fetch(ep, {
-            method:'POST',
-            headers:{ 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8' },
-            body: 'data=' + encodeURIComponent(query)
-          });
-          if (!res.ok) throw new Error('HTTP '+res.status);
-          const json = await res.json();
-          return json;
-        }catch(err){
-          lastErr = err;
-          // try next endpoint
+      function resize() {
+        DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+        canvas.width = Math.floor(window.innerWidth * DPR);
+        canvas.height = Math.floor(window.innerHeight * DPR);
+        canvas.style.width = '100vw';
+        canvas.style.height = '100vh';
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        W = window.innerWidth;
+        H = window.innerHeight;
+        GROUND_Y = Math.round(H * 0.78);
+        draw(); // immediate refresh
+      }
+
+      function resetGame() {
+        state.score = 0;
+        platforms.length = 0;
+
+        const firstW = 90;
+        const firstX = 60;
+        platforms.push({ x: firstX, w: firstW });
+        while (platforms.length < 4) {
+          addPlatform();
+        }
+
+        player.r = Math.max(7, Math.min(12, Math.round(H * 0.015)));
+        player.x = platforms[0].x + platforms[0].w;
+        player.y = GROUND_Y;
+        player.eyeBlink = 0;
+
+        stick.baseX = player.x;
+        stick.length = 0;
+        stick.angle = 0;
+        stick.falling = false;
+
+        updateScore();
+        state.mode = 'ready';
+      }
+
+      function addPlatform() {
+        const last = platforms[platforms.length - 1];
+        const baseX = last.x + last.w;
+        const gap = rand(GAP_MIN, GAP_MAX);
+        const w = rand(PLATFORM_MIN_W, PLATFORM_MAX_W);
+        const x = Math.round(baseX + gap);
+        platforms.push({ x, w: Math.round(w) });
+      }
+
+      function updateScore() {
+        scoreEl.textContent = `Score: ${state.score}`;
+      }
+
+      // Input
+      let holding = false;
+
+      function onPress() {
+        if (state.mode === 'menu') {
+          centerEl.style.display = 'none';
+          resetGame();
+          return;
+        }
+        if (state.mode === 'gameover') {
+          centerEl.style.display = 'none';
+          resetGame();
+          return;
+        }
+        if (state.mode === 'ready') {
+          holding = true;
+          stick.length = 0;
+          stick.angle = 0;
+          stick.falling = false;
+          stick.baseX = player.x;
+          state.mode = 'growing';
         }
       }
-      throw lastErr || new Error('Overpass unavailable');
-    }
 
-    function renderResults(items, origin){
-      clearResults();
-      if (!items || !items.length){
-        resultsEl.innerHTML = `<div class="empty">No places found. Try increasing the radius or switching category.</div>`;
-        return;
+      function onRelease() {
+        if (!holding) return;
+        holding = false;
+        if (state.mode === 'growing') {
+          state.mode = 'rotating';
+        }
       }
-      const frag = document.createDocumentFragment();
-      for (const it of items){
-        const card = document.createElement('div');
-        card.className = 'card';
 
-        const avatar = document.createElement('div');
-        avatar.className = 'avatar';
-        avatar.textContent = placeIcon(it.tags);
+      // Events
+      window.addEventListener('resize', resize);
+      window.addEventListener('orientationchange', resize);
 
-        const content = document.createElement('div');
-        content.className = 'content';
+      canvas.addEventListener('mousedown', onPress);
+      canvas.addEventListener('mouseup', onRelease);
+      canvas.addEventListener('mouseleave', onRelease);
 
-        const name = document.createElement('div');
-        name.className = 'name';
-        name.textContent = it.name || 'Unnamed place';
+      canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onPress(); }, { passive: false });
+      canvas.addEventListener('touchend', (e) => { e.preventDefault(); onRelease(); }, { passive: false });
+      canvas.addEventListener('touchcancel', (e) => { e.preventDefault(); onRelease(); }, { passive: false });
 
-        const meta = document.createElement('div');
-        meta.className = 'meta';
-        const addr = it.address || '';
-        meta.textContent = [addr, it.distanceText].filter(Boolean).join(' • ');
-
-        const badges = document.createElement('div');
-        badges.className = 'badges';
-        const tagBadge = document.createElement('div');
-        tagBadge.className = 'badge';
-        tagBadge.textContent = it.kind;
-        badges.appendChild(tagBadge);
-
-        const actions = document.createElement('div');
-        actions.className = 'actions';
-        const maps = document.createElement('a');
-        maps.className = 'btn primary';
-        maps.href = `https://www.google.com/maps?q=${it.lat},${it.lon}`;
-        maps.target = '_blank';
-        maps.rel = 'noopener';
-        maps.textContent = 'Open in Maps';
-
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'btn';
-        copyBtn.textContent = 'Copy address';
-        copyBtn.addEventListener('click', async () => {
-          try{
-            await navigator.clipboard.writeText(it.name + (it.address ? ' — ' + it.address : '') );
-            copyBtn.textContent = 'Copied!';
-            setTimeout(()=> copyBtn.textContent = 'Copy address', 1200);
-          }catch(e){
-            alert('Copy failed');
-          }
-        });
-
-        actions.appendChild(maps);
-        actions.appendChild(copyBtn);
-
-        content.appendChild(name);
-        content.appendChild(meta);
-        content.appendChild(badges);
-        content.appendChild(actions);
-
-        card.appendChild(avatar);
-        card.appendChild(content);
-        frag.appendChild(card);
-      }
-      resultsEl.appendChild(frag);
-
-      const now = new Date();
-      const radiusKm = (state.radius/1000).toFixed(1);
-      metaEl.textContent = `${items.length} results • within ${radiusKm} km • ${now.toLocaleTimeString()}`;
-    }
-
-    function normalizeKind(tags){
-      if (tags.amenity === 'cinema') return 'Cinema';
-      if (tags.amenity === 'restaurant') return 'Restaurant';
-      if (tags.amenity === 'fast_food') return 'Fast food';
-      if (tags.amenity === 'cafe') return 'Cafe';
-      if (tags.amenity === 'bar') return 'Bar';
-      if (tags.amenity === 'pub') return 'Pub';
-      if (tags.amenity === 'nightclub') return 'Nightclub';
-      if (tags.leisure === 'playground') return 'Playground';
-      if (tags.leisure === 'park') return 'Park';
-      if (tags.tourism === 'theme_park') return 'Theme park';
-      if (tags.tourism === 'zoo') return 'Zoo';
-      if (tags.tourism === 'aquarium') return 'Aquarium';
-      if (tags.tourism === 'viewpoint') return 'Viewpoint';
-      return 'Place';
-    }
-
-    function processOverpass(data, origin){
-      const list = [];
-      const seen = new Set();
-      for (const el of (data.elements || [])){
-        const tags = el.tags || {};
-        const lat = el.lat || (el.center && el.center.lat);
-        const lon = el.lon || (el.center && el.center.lon);
-        if (lat == null || lon == null) continue;
-
-        const name = tags.name || null;
-        const key = uniqueKey(lat, lon, name);
-        if (seen.has(key)) continue;
-        seen.add(key);
-
-        const distance = haversine(origin.lat, origin.lon, lat, lon);
-        list.push({
-          id: el.id,
-          lat, lon,
-          name,
-          address: buildAddress(tags),
-          distance,
-          distanceText: formatDistance(distance),
-          kind: normalizeKind(tags),
-          tags
-        });
-      }
-      // Sort by distance, then by name
-      list.sort((a,b)=> a.distance - b.distance || (a.name||'').localeCompare(b.name||''));
-      return list;
-    }
-
-    async function searchAround(){
-      if (state.lat == null || state.lon == null){
-        setStatus(`<div class="error">Choose "Use my location" or enter an address to start.</div>`);
-        return;
-      }
-      clearResults();
-      setStatus(`
-        <div class="loader">
-          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span>Searching ${state.category} within ${Math.round(state.radius/1000)} km…</span>
-        </div>
-      `);
-      const q = buildOverpassQuery(state.lat, state.lon, state.radius, state.category);
-      if (!q){
-        setStatus(`<div class="error">No query for selected category.</div>`);
-        return;
-      }
-      try{
-        const data = await fetchOverpass(q);
-        const items = processOverpass(data, { lat: state.lat, lon: state.lon });
-        renderResults(items, { lat: state.lat, lon: state.lon });
-        setStatus('');
-      }catch(err){
-        console.error(err);
-        setStatus(`<div class="error">Couldn’t fetch results right now. Please try again or change radius/category.</div>`);
-      }
-    }
-
-    // --- Geolocation & Geocoding ---
-    async function geocode(query){
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
-      const res = await fetch(url, { headers: { 'Accept':'application/json' } });
-      if (!res.ok) throw new Error('Geocoding failed');
-      const data = await res.json();
-      if (!data.length) throw new Error('No matches');
-      const best = data[0];
-      return { lat: parseFloat(best.lat), lon: parseFloat(best.lon), display_name: best.display_name };
-    }
-
-    // --- Event wiring ---
-    chips.forEach(chip=>{
-      chip.addEventListener('click', ()=>{
-        chips.forEach(c=> c.classList.remove('active'));
-        chip.classList.add('active');
-        state.category = chip.dataset.category;
-        searchAround();
+      startBtn.addEventListener('click', () => {
+        centerEl.style.display = 'none';
+        resetGame();
       });
-    });
-    radiusEl.addEventListener('change', ()=>{
-      state.radius = parseInt(radiusEl.value,10);
-      searchAround();
-    });
-    useLocationBtn.addEventListener('click', ()=>{
-      if (!('geolocation' in navigator)){
-        setStatus('<div class="error">Geolocation not supported on this device.</div>');
-        return;
-      }
-      setStatus(`
-        <div class="loader">
-          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span>Getting your location…</span>
-        </div>
-      `);
-      navigator.geolocation.getCurrentPosition(pos=>{
-        state.lat = pos.coords.latitude;
-        state.lon = pos.coords.longitude;
-        setStatus('');
-        searchAround();
-      }, err=>{
-        setStatus(`<div class="error">Location blocked or unavailable. You can type an address instead.</div>`);
-      }, { enableHighAccuracy:true, timeout:10000, maximumAge:0 });
-    });
-    searchAddressBtn.addEventListener('click', async ()=>{
-      const q = addressEl.value.trim();
-      if (!q){ addressEl.focus(); return; }
-      setStatus(`
-        <div class="loader">
-          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span>Finding “${q}”…</span>
-        </div>
-      `);
-      try{
-        const {lat, lon, display_name} = await geocode(q);
-        state.lat = lat; state.lon = lon;
-        setStatus(`<div class="small">Location set to: ${display_name}</div>`);
-        searchAround();
-      }catch(e){
-        setStatus(`<div class="error">Couldn’t find that place. Try a city, neighborhood, or landmark.</div>`);
-      }
-    });
 
-    // --- Sensible default: attempt geolocation on load (non-blocking) ---
-    (function init(){
-      // Don’t auto-search until we have a position
-      if ('geolocation' in navigator){
-        navigator.geolocation.getCurrentPosition(pos=>{
-          state.lat = pos.coords.latitude;
-          state.lon = pos.coords.longitude;
-          searchAround();
-        }, ()=>{/* ignore */});
+      // Game loop
+      let lastTime = performance.now();
+
+      function loop(t) {
+        const dt = Math.min(1/30, (t - lastTime) / 1000);
+        lastTime = t;
+
+        update(dt);
+        draw();
+
+        requestAnimationFrame(loop);
       }
+
+      function update(dt) {
+        // Idle sky vibe
+        player.eyeBlink -= dt;
+        if (player.eyeBlink < -rand(2, 5)) {
+          player.eyeBlink = 0.12;
+        }
+
+        switch (state.mode) {
+          case 'growing': {
+            stick.length += stick.growSpeed * dt;
+            break;
+          }
+          case 'rotating': {
+            stick.angle += stick.rotateSpeed * dt;
+            if (stick.angle >= Math.PI / 2) {
+              stick.angle = Math.PI / 2;
+              // Evaluate success
+              const endX = stick.baseX + Math.cos(stick.angle) * stick.length;
+              const target = platforms[1];
+              const minX = target.x;
+              const maxX = target.x + target.w;
+              const success = endX >= minX && endX <= maxX;
+
+              if (success) {
+                // bonus if near center
+                const center = target.x + target.w / 2;
+                const perfectRange = Math.max(8, target.w * 0.08);
+                if (Math.abs(endX - center) <= perfectRange) {
+                  state.score += 2; // sweet spot bonus
+                } else {
+                  state.score += 1;
+                }
+                updateScore();
+              }
+
+              // Begin walking regardless; outcome depends on success
+              walking.toX = success ? Math.min(endX, target.x + target.w) : stick.baseX + stick.length;
+              walking.progress = 0;
+              walking.duration = Math.max(0.35, Math.min(0.8, Math.abs(walking.toX - player.x) / 500));
+              walking.success = success;
+              state.mode = 'walking';
+            }
+            break;
+          }
+          case 'walking': {
+            walking.progress += dt / walking.duration;
+            const p = Math.min(1, walking.progress);
+            // Ease
+            const e = p < 0.5 ? 2*p*p : -1 + (4 - 2*p)*p;
+            player.x = lerp(stick.baseX, walking.toX, e);
+            // y stays on ground until near falling
+            if (p >= 1) {
+              if (walking.success) {
+                // Snap to target platform edge
+                player.x = Math.min(walking.toX, platforms[1].x + platforms[1].w - 2);
+                // Shift world so player stands at edge of new platform
+                const shiftBy = platforms[1].x + platforms[1].w - (platforms[0].x + platforms[0].w);
+                shifting.offset = 0;
+                shifting.total = shiftBy;
+                shifting.duration = Math.max(0.35, Math.min(0.9, shiftBy / 600));
+                shifting.progress = 0;
+                state.mode = 'shifting';
+              } else {
+                // Begin fall
+                falling.vy = 0;
+                falling.y = player.y;
+                falling.progress = 0;
+                stick.falling = true;
+                state.mode = 'gameover';
+                showGameOver();
+              }
+            }
+            break;
+          }
+          case 'shifting': {
+            shifting.progress += dt / shifting.duration;
+            const p = Math.min(1, shifting.progress);
+            const e = easeInOutCubic(p);
+            const dx = lerp(0, shifting.total, e) - shifting.offset;
+            shifting.offset += dx;
+            // Move everything left by dx
+            for (const pl of platforms) pl.x -= dx;
+            player.x -= dx;
+            stick.baseX -= dx;
+
+            if (p >= 1) {
+              // Remove first platform, add a new one
+              platforms.shift();
+              while (platforms.length < 4) addPlatform();
+              // Reset for next round
+              stick.length = 0;
+              stick.angle = 0;
+              stick.falling = false;
+              state.mode = 'ready';
+            }
+            break;
+          }
+          case 'ready':
+          case 'menu':
+          case 'gameover':
+          default:
+            break;
+        }
+      }
+
+      const walking = {
+        toX: 0,
+        progress: 0,
+        duration: 0.6,
+        success: false
+      };
+
+      const shifting = {
+        offset: 0,
+        total: 0,
+        duration: 0.6,
+        progress: 0
+      };
+
+      const falling = { vy: 0, y: 0, progress: 0 };
+
+      function showGameOver() {
+        state.best = Math.max(state.best, state.score);
+        setTimeout(() => {
+          centerEl.style.display = 'flex';
+          messageEl.innerHTML = `
+            <h1>Game Over</h1>
+            <p>Score: ${state.score} &nbsp;•&nbsp; Best: ${state.best}</p>
+            <button class="btn" id="restartBtn">Try Again</button>
+          `;
+          const btn = document.getElementById('restartBtn');
+          btn.addEventListener('click', () => {
+            centerEl.style.display = 'none';
+            resetGame();
+          }, { once: true });
+        }, 450);
+      }
+
+      function draw() {
+        // Sky background
+        const grad = ctx.createLinearGradient(0, 0, 0, H);
+        grad.addColorStop(0, colors.skyTop);
+        grad.addColorStop(1, colors.skyBottom);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+
+        // Subtle distant hills
+        drawHills();
+
+        // Ground shadow strip
+        ctx.fillStyle = 'rgba(0,0,0,0.08)';
+        ctx.fillRect(0, GROUND_Y + 1, W, H - GROUND_Y);
+
+        // Platforms
+        for (const pl of platforms) drawPlatform(pl.x, pl.w);
+
+        // Stick
+        drawStick();
+
+        // Player
+        drawPlayer();
+
+        // Hint when ready
+        if (state.mode === 'ready') {
+          ctx.save();
+          ctx.globalAlpha = 0.6;
+          ctx.fillStyle = '#111';
+          ctx.font = '14px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('Hold to grow. Release to drop.', Math.round(player.x - 20), Math.round(GROUND_Y - 60));
+          ctx.restore();
+        }
+
+        // If gameover and falling, animate fall
+        if (state.mode === 'gameover' && stick.falling) {
+          // Extend simple fall animation visually
+          falling.vy += 1600 / 60 / DPR; // not time-accurate, just visual
+          player.y += falling.vy * (1/60);
+          if (player.y > H + 40) {
+            stick.falling = false;
+          }
+        }
+      }
+
+      function drawPlatform(x, w) {
+        const top = GROUND_Y;
+        const height = H - top;
+        // Pillar
+        ctx.fillStyle = colors.pillar;
+        ctx.fillRect(Math.round(x), Math.round(top), Math.round(w), Math.round(height));
+        // Top
+        ctx.fillStyle = colors.island;
+        ctx.fillRect(Math.round(x), Math.round(top - 14), Math.round(w), 14);
+        // Edge highlight
+        ctx.fillStyle = colors.islandEdge;
+        ctx.fillRect(Math.round(x), Math.round(top - 14), Math.round(w), 4);
+      }
+
+      function drawStick() {
+        if (state.mode === 'ready' && stick.length === 0) return;
+        if (state.mode === 'menu') return;
+
+        ctx.save();
+        ctx.translate(stick.baseX, GROUND_Y);
+        ctx.rotate(-stick.angle);
+        ctx.strokeStyle = colors.stick;
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -stick.length);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawPlayer() {
+        const r = player.r;
+        const y = Math.min(player.y, GROUND_Y - r);
+        ctx.save();
+        // Body
+        ctx.fillStyle = colors.player;
+        ctx.beginPath();
+        ctx.arc(player.x - r * 0.6, y - r * 0.8, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eye
+        const blink = player.eyeBlink > 0 ? 0.2 : 1;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.ellipse(player.x - r * 0.9, y - r * 0.95, r * 0.33, r * 0.33 * blink, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#111';
+        ctx.beginPath();
+        ctx.arc(player.x - r * 0.85, y - r, r * 0.15, 0, Math.PI*2);
+        ctx.fill();
+
+        // Accent scarf
+        ctx.fillStyle = colors.accent;
+        ctx.fillRect(player.x - r*1.5, y - r*0.2, r*1.0, r*0.35);
+        ctx.restore();
+      }
+
+      function drawHills() {
+        ctx.save();
+        ctx.globalAlpha = 0.25;
+        ctx.fillStyle = '#6bb1df';
+        const baseY = Math.round(GROUND_Y + 40);
+        ctx.beginPath();
+        ctx.moveTo(0, H);
+        for (let x = 0; x <= W; x += 4) {
+          const y = baseY - Math.sin(x * 0.01) * 12 - 10;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(W, H);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.18;
+        ctx.fillStyle = '#5aa4d8';
+        ctx.beginPath();
+        ctx.moveTo(0, H);
+        for (let x = 0; x <= W; x += 4) {
+          const y = baseY - Math.cos(x * 0.013 + 1.3) * 16 + 12;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(W, H);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Helpers
+      function lerp(a, b, t) { return a + (b - a) * t; }
+      function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+
+      // Boot
+      resize();
+      requestAnimationFrame(loop);
     })();
   </script>
 </body>
