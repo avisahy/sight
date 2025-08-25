@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Tropical Left-Fall Bridge Game with Waves</title>
+<title>Tropical LTR Bridge Game with Waves</title>
 <style>
   body {
     margin: 0;
@@ -41,7 +41,7 @@ const colors = {
 };
 
 let platforms = [];
-let stick = { baseX: 0, length: 0, angle: Math.PI, rotateSpeed: Math.PI };
+let stick = { baseX: 0, length: 0, angle: 0, rotateSpeed: Math.PI };
 let player = { x: 0, y: 0, size: 20, walking: false };
 let state = 'waiting';
 let score = 0;
@@ -49,14 +49,14 @@ let waveOffset = 0;
 
 function init() {
   platforms = [
-    { x: 200, w: 60 }, // starting island
-    { x: 50, w: 60 }   // target island to the left
+    { x: 50, w: 60 }, // starting island on left
+    { x: 200, w: 60 } // target island to the right
   ];
-  stick.baseX = platforms[0].x; // left edge of starting island
+  stick.baseX = platforms[0].x + platforms[0].w; // right edge of starting island
   stick.length = 0;
-  stick.angle = Math.PI; // straight up, facing left
-  player.x = platforms[0].x; // player at left edge
-  player.y = (GROUND_Y - 100) - player.size; // FIXED: on top of island
+  stick.angle = 0; // straight up, facing right
+  player.x = platforms[0].x + platforms[0].w - player.size; // player at right edge
+  player.y = (GROUND_Y - 100) - player.size; // on top of island
   score = 0;
   state = 'waiting';
 }
@@ -145,25 +145,25 @@ function update(dt) {
   if (state === 'growing') {
     stick.length += 200 * dt;
   } else if (state === 'rotating') {
-    stick.angle -= stick.rotateSpeed * dt;
-    if (stick.angle <= Math.PI / 2) {
+    stick.angle += stick.rotateSpeed * dt;
+    if (stick.angle >= Math.PI / 2) {
       stick.angle = Math.PI / 2;
-      const endX = stick.baseX - stick.length;
+      const endX = stick.baseX + stick.length;
       const target = platforms[1];
       const success = endX >= target.x && endX <= target.x + target.w;
       state = 'walking';
       player.walking = true;
-      player.toX = success ? target.x : endX;
+      player.toX = success ? target.x + target.w - player.size : endX - player.size;
       player.speed = 200;
       player.success = success;
     }
   } else if (state === 'walking') {
-    if (player.x > player.toX) {
-      player.x -= player.speed * dt;
+    if (player.x < player.toX) {
+      player.x += player.speed * dt;
     } else {
       if (player.success) {
         score++;
-        const dx = 200 - platforms[0].x; // shift so new start island is at x=200
+        const dx = 50 - platforms[0].x; // shift so new start island is at x=50
         platforms.forEach(p => p.x += dx);
         stick.baseX += dx;
         player.x += dx;
@@ -171,10 +171,10 @@ function update(dt) {
         const last = platforms[platforms.length - 1];
         const gap = 100 + Math.random() * 200;
         const w = 50 + Math.random() * 50;
-        platforms.push({ x: last.x - gap - w, w });
+        platforms.push({ x: last.x + last.w + gap, w });
         stick.length = 0;
-        stick.angle = Math.PI;
-        stick.baseX = platforms[0].x;
+        stick.angle = 0;
+        stick.baseX = platforms[0].x + platforms[0].w;
         state = 'waiting';
       } else {
         state = 'falling';
