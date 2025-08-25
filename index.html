@@ -1,17 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Tropical Right-Fall Bridge Game with Waves</title>
+<meta charset="UTF-8" />
+<title>Tropical Right-Fall Bridge Game with Waves, Player Fall & Splash</title>
 <style>
   body {
     margin: 0;
     background: linear-gradient(#ffcc70, #ffecd2);
     overflow: hidden;
   }
-  canvas {
-    display: block;
-  }
+  canvas { display: block; }
 </style>
 </head>
 <body>
@@ -19,12 +17,13 @@
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+
 let W = window.innerWidth;
 let H = window.innerHeight;
 canvas.width = W;
 canvas.height = H;
 
-const GROUND_Y = H * 0.75;
+let GROUND_Y = H * 0.75;
 
 const colors = {
   skyTop: '#ffcc70',
@@ -42,21 +41,28 @@ const colors = {
 
 let platforms = [];
 let stick = { baseX: 0, length: 0, angle: 0, rotateSpeed: Math.PI };
-let player = { x: 0, y: 0, size: 20, walking: false };
+let player = { x: 0, y: 0, size: 20, walking: false, falling: false, vy: 0 };
 let state = 'waiting';
 let score = 0;
 let waveOffset = 0;
+let splashes = [];
+let failTimer = 0;
 
 function init() {
   platforms = [
-    { x: 50, w: 60 },  // starting island on left
-    { x: 200, w: 60 }  // target island to the right
+    { x: 50, w: 60 },   // start island (left)
+    { x: 200, w: 60 }   // target island (right)
   ];
   stick.baseX = platforms[0].x + platforms[0].w; // right edge of start island
   stick.length = 0;
-  stick.angle = 0; // vertical, facing right
-  player.x = platforms[0].x + platforms[0].w - player.size; // player at right edge
+  stick.angle = 0; // vertical
+  player.x = platforms[0].x + platforms[0].w - player.size; // stand at right edge
   player.y = (GROUND_Y - 100) - player.size; // on top of island
+  player.walking = false;
+  player.falling = false;
+  player.vy = 0;
+  splashes = [];
+  failTimer = 0;
   score = 0;
   state = 'waiting';
 }
@@ -71,11 +77,11 @@ function drawPlatform(p) {
 
   // Palm tree
   ctx.fillStyle = colors.palmTrunk;
-  ctx.fillRect(p.x + p.w/2 - 2, top - 40, 4, 40);
+  ctx.fillRect(p.x + p.w / 2 - 2, top - 40, 4, 40);
   ctx.fillStyle = colors.palmLeaves;
   for (let i = 0; i < 5; i++) {
     ctx.beginPath();
-    ctx.ellipse(p.x + p.w/2, top - 40, 20, 8, (Math.PI * 2 / 5) * i, 0, Math.PI * 2);
+    ctx.ellipse(p.x + p.w / 2, top - 40, 20, 8, (Math.PI * 2 / 5) * i, 0, Math.PI * 2);
     ctx.fill();
   }
 }
@@ -106,13 +112,23 @@ function drawWaves() {
   const waveLength = 50;
   const speed = 2;
 
-  waveOffset += speed;
+  waveOffset += speed; // subtle, frame-based
   ctx.beginPath();
   for (let x = 0; x <= W; x++) {
     const y = GROUND_Y + Math.sin((x + waveOffset) / waveLength) * waveHeight;
-    ctx.lineTo(x, y);
+    if (x === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
   }
   ctx.stroke();
+}
+
+function drawSplashes() {
+  splashes.forEach(s => {
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+    ctx.fill();
+  });
 }
 
 function draw() {
@@ -123,19 +139,16 @@ function draw() {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
-  // Water with waves
+  // Water
   drawWaves();
 
-  // Platforms
+  // World
   platforms.forEach(drawPlatform);
-
-  // Stick
   drawStick();
-
-  // Player
   drawPlayer();
+  drawSplashes();
 
-  // Score
+  // UI
   ctx.fillStyle = '#000';
   ctx.font = '20px sans-serif';
   ctx.fillText('Score: ' + score, 20, 30);
@@ -145,7 +158,7 @@ function update(dt) {
   if (state === 'growing') {
     stick.length += 200 * dt;
   } else if (state === 'rotating') {
-    stick.angle += stick.rotateSpeed * dt;
+    stick.angle += stick.rotateSpeed * dt; // rotate clockwise
     if (stick.angle >= Math.PI / 2) {
       stick.angle = Math.PI / 2;
       const endX = stick.baseX + stick.length;
@@ -163,57 +176,111 @@ function update(dt) {
     } else {
       if (player.success) {
         score++;
-        const dx = 50 - platforms[0].x; // shift so new start island is at x=50
+        const dx = 50 - platforms[0].x; // keep start island at x=50
         platforms.forEach(p => p.x += dx);
         stick.baseX += dx;
         player.x += dx;
+
         platforms.shift();
         const last = platforms[platforms.length - 1];
         const gap = 100 + Math.random() * 200;
         const w = 50 + Math.random() * 50;
         platforms.push({ x: last.x + last.w + gap, w });
+
         stick.length = 0;
         stick.angle = 0;
         stick.baseX = platforms[0].x + platforms[0].w;
         state = 'waiting';
       } else {
-        state = 'falling';
+        state = 'stick-falling';
+        player.falling = true;
+        player.vy = 0;
+        failTimer = 0;
       }
     }
+  } else if (state === 'stick-falling') {
+    stick.angle += stick.rotateSpeed * dt;
+    failTimer += dt;
+
+    if (player.falling) {
+      // Slide along the stick and then fall
+      player.x += Math.cos(stick.angle) * 2;
+      player.y += Math.sin(stick.angle) * 2;
+      player.vy += 500 * dt;     // gravity
+      player.y += player.vy * dt;
+
+      if (player.y >= GROUND_Y && splashes.length === 0) {
+        createSplash(player.x + player.size / 2, GROUND_Y);
+      }
+    }
+
+    // Move on after rotation completes or timeout (safety)
+    if (stick.angle >= Math.PI || failTimer > 1.5) {
+      state = 'falling';
+    }
   } else if (state === 'falling') {
-    player.y += 300 * dt;
-    if (player.y > H) {
+    player.vy += 800 * dt; // faster gravity so we don't hang
+    player.y += player.vy * dt;
+    if (player.y > H + 50) {
       init();
     }
   }
+
+  // Splash particles
+  splashes.forEach(s => {
+    s.x += s.vx * dt;
+    s.y += s.vy * dt;
+    s.vy += 300 * dt;
+    s.alpha -= 1.5 * dt;
+  });
+  splashes = splashes.filter(s => s.alpha > 0);
 }
 
-let lastTime = null;
-function loop(timestamp) {
-  if (!lastTime) lastTime = timestamp;
-  const dt = (timestamp - lastTime) / 1000;
-  lastTime = timestamp;
+function createSplash(x, y) {
+  for (let i = 0; i < 8; i++) {
+    const angle = Math.random() * Math.PI;
+    const speed = 100 + Math.random() * 100;
+    splashes.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: -Math.sin(angle) * speed,
+      alpha: 1
+    });
+  }
+}
+
+let lastTime = 0;
+function loop(t) {
+  if (!lastTime) lastTime = t;
+  const dt = (t - lastTime) / 1000;
+  lastTime = t;
+
   update(dt);
   draw();
   requestAnimationFrame(loop);
 }
-loop();
+requestAnimationFrame(loop);
 
-window.addEventListener('mousedown', () => {
-  if (state === 'waiting') {
-    state = 'growing';
-  }
-});
-window.addEventListener('mouseup', () => {
-  if (state === 'growing') {
-    state = 'rotating';
-  }
-});
+// Input (mouse + touch)
+function pressStart() {
+  if (state === 'waiting') state = 'growing';
+}
+function pressEnd() {
+  if (state === 'growing') state = 'rotating';
+}
+window.addEventListener('mousedown', pressStart);
+window.addEventListener('mouseup', pressEnd);
+window.addEventListener('touchstart', e => { e.preventDefault(); pressStart(); }, { passive: false });
+window.addEventListener('touchend', e => { e.preventDefault(); pressEnd(); }, { passive: false });
+
+// Resize
 window.addEventListener('resize', () => {
   W = window.innerWidth;
   H = window.innerHeight;
   canvas.width = W;
   canvas.height = H;
+  GROUND_Y = H * 0.75;
 });
 </script>
 </body>
