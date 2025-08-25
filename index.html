@@ -49,13 +49,13 @@ let score = 0;
 
 function init() {
   platforms = [
-    { x: 50, w: 60 },
-    { x: 200, w: 60 }
+    { x: 200, w: 60 }, // starting island
+    { x: 50, w: 60 }   // target island to the left
   ];
-  stick.baseX = platforms[0].x + platforms[0].w;
+  stick.baseX = platforms[0].x; // left edge of starting island
   stick.length = 0;
   stick.angle = Math.PI; // straight up, facing left
-  player.x = platforms[0].x + platforms[0].w - player.size;
+  player.x = platforms[0].x; // player at left edge
   player.y = GROUND_Y - player.size;
   score = 0;
   state = 'waiting';
@@ -132,10 +132,10 @@ function update(dt) {
       stick.angle = Math.PI / 2;
       const endX = stick.baseX - stick.length;
       const target = platforms[1];
-      const success = endX <= target.x + target.w && endX >= target.x;
+      const success = endX >= target.x && endX <= target.x + target.w;
       state = 'walking';
       player.walking = true;
-      player.toX = success ? target.x + target.w - player.size : endX - player.size;
+      player.toX = success ? target.x : endX;
       player.speed = 200;
       player.success = success;
     }
@@ -145,10 +145,10 @@ function update(dt) {
     } else {
       if (player.success) {
         score++;
-        const dx = platforms[0].x - 50;
-        platforms.forEach(p => p.x -= dx);
-        stick.baseX -= dx;
-        player.x -= dx;
+        const dx = 200 - platforms[0].x; // shift so new start island is at x=200
+        platforms.forEach(p => p.x += dx);
+        stick.baseX += dx;
+        player.x += dx;
         platforms.shift();
         const last = platforms[platforms.length - 1];
         const gap = 100 + Math.random() * 200;
