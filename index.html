@@ -1,301 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Tropical Right‑Fall Bridge Game</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cheap Ticket Finder</title>
 <style>
-  body {
-    margin: 0;
-    background: linear-gradient(#ffcc70, #ffecd2);
-    overflow: hidden;
-  }
-  canvas { display: block; }
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to bottom, #f8f9fa, #e3f2fd);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    header {
+        background-color: #1976d2;
+        color: white;
+        width: 100%;
+        padding: 20px;
+        text-align: center;
+        font-size: 1.5em;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    main {
+        margin-top: 30px;
+        width: 90%;
+        max-width: 600px;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .search-box {
+        display: flex;
+        gap: 10px;
+    }
+    input[type="text"] {
+        flex: 1;
+        padding: 10px;
+        font-size: 1em;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    button {
+        background-color: #1976d2;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        font-size: 1em;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #1565c0;
+    }
+    .results {
+        margin-top: 20px;
+        padding: 10px;
+        background: #f1f8ff;
+        border-radius: 4px;
+        min-height: 100px;
+    }
+    .steps {
+        margin-top: 20px;
+        background: #fff3cd;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #ffeeba;
+    }
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
+
+<header>🎟 Welcome to Cheap Ticket Finder</header>
+
+<main>
+    <p>Find the best deals on tickets, sales, and discounts. Enter your search below:</p>
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="e.g., flight to Paris, concert tickets">
+        <button onclick="searchTickets()">Search</button>
+    </div>
+    <div class="results" id="resultsPreview">
+        <em>Your search results will appear here...</em>
+    </div>
+    <div class="steps" id="stepsGuide" style="display:none;">
+        <h3>How to Get Your Tickets:</h3>
+        <ol>
+            <li>Click on the deal link in the results.</li>
+            <li>Follow the booking instructions on the provider’s site.</li>
+            <li>Apply any promo codes listed.</li>
+            <li>Complete your purchase and enjoy your trip/event!</li>
+        </ol>
+    </div>
+</main>
+
 <script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+function searchTickets() {
+    const query = document.getElementById('searchInput').value.trim();
+    const resultsDiv = document.getElementById('resultsPreview');
+    const stepsDiv = document.getElementById('stepsGuide');
 
-let W = window.innerWidth;
-let H = window.innerHeight;
-canvas.width = W;
-canvas.height = H;
-
-let GROUND_Y = H * 0.75;
-let dtGlobal = 0;
-
-const colors = {
-  skyTop: '#ffcc70',
-  skyBottom: '#ffecd2',
-  stick: '#5b3a29',
-  player: '#2b2b2b',
-  accent: '#ff6f61',
-  island: '#d2b48c',
-  islandEdge: '#c2a178',
-  water: '#00bcd4',
-  palmTrunk: '#8b5a2b',
-  palmLeaves: '#228b22',
-  wave: 'rgba(255,255,255,0.3)'
-};
-
-let platforms = [];
-let stick = { baseX: 0, length: 0, angle: 0, rotateSpeed: Math.PI };
-let player = { x: 0, y: 0, size: 20, walking: false, falling: false, vy: 0, speed: 200, toX: 0, success: false };
-let state = 'waiting';
-let score = 0;
-let waveOffset = 0;
-let splashes = [];
-let failTimer = 0;
-
-function init() {
-  platforms = [
-    { x: 50, w: 60 },
-    { x: 200, w: 60 }
-  ];
-  stick.baseX = platforms[0].x + platforms[0].w;
-  stick.length = 0;
-  stick.angle = 0;
-  player.x = platforms[0].x + platforms[0].w - player.size;
-  player.y = GROUND_Y - 100 - player.size;
-  player.walking = false;
-  player.falling = false;
-  player.vy = 0;
-  splashes = [];
-  failTimer = 0;
-  score = 0;
-  state = 'waiting';
-}
-
-function spawnNextPlatform() {
-  const last = platforms[platforms.length - 1];
-  const gap = 100 + Math.random() * 200;
-  const w = 50 + Math.random() * 50;
-  platforms.push({ x: last.x + last.w + gap, w });
-}
-
-function drawPlatform(p) {
-  const top = GROUND_Y - 100;
-  ctx.fillStyle = colors.island;
-  ctx.fillRect(p.x, top, p.w, 100);
-  ctx.fillStyle = colors.islandEdge;
-  ctx.fillRect(p.x, GROUND_Y, p.w, H - GROUND_Y);
-
-  ctx.fillStyle = colors.palmTrunk;
-  ctx.fillRect(p.x + p.w / 2 - 2, top - 40, 4, 40);
-  ctx.fillStyle = colors.palmLeaves;
-  for (let i = 0; i < 5; i++) {
-    ctx.beginPath();
-    ctx.ellipse(p.x + p.w / 2, top - 40, 20, 8, (Math.PI * 2 / 5) * i, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-function drawStick() {
-  ctx.save();
-  ctx.translate(stick.baseX, GROUND_Y - 100);
-  ctx.rotate(stick.angle);
-  ctx.fillStyle = colors.stick;
-  ctx.fillRect(0, 0, 4, -stick.length);
-  ctx.restore();
-}
-
-function drawPlayer() {
-  ctx.fillStyle = colors.player;
-  ctx.fillRect(player.x, player.y, player.size, player.size);
-  ctx.fillStyle = colors.accent;
-  ctx.fillRect(player.x, player.y, player.size, 5);
-}
-
-function drawWaves() {
-  ctx.fillStyle = colors.water;
-  ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
-
-  ctx.strokeStyle = colors.wave;
-  ctx.lineWidth = 2;
-  const waveHeight = 8;
-  const waveLength = 50;
-  const speed = 60;
-
-  waveOffset += speed * dtGlobal;
-  ctx.beginPath();
-  for (let x = 0; x <= W; x++) {
-    const y = GROUND_Y + Math.sin((x + waveOffset) / waveLength) * waveHeight;
-    if (x === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
-  ctx.stroke();
-}
-
-function drawSplashes() {
-  splashes.forEach(s => {
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
-    ctx.fill();
-  });
-}
-
-function draw() {
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, colors.skyTop);
-  grad.addColorStop(1, colors.skyBottom);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-
-  drawWaves();
-  platforms.forEach(drawPlatform);
-  drawStick();
-  drawPlayer();
-  drawSplashes();
-
-  ctx.fillStyle = '#000';
-  ctx.font = '20px sans-serif';
-  ctx.fillText('Score: ' + score, 20, 30);
-}
-
-function update(dt) {
-  if (state === 'growing') {
-    stick.length += 200 * dt;
-  } else if (state === 'rotating') {
-    stick.angle += stick.rotateSpeed * dt;
-    if (stick.angle >= Math.PI / 2) {
-      stick.angle = Math.PI / 2;
-
-      // ✅ Correct horizontal reach calculation
-      const endX = stick.baseX + Math.sin(stick.angle) * stick.length;
-
-      const target = platforms[1];
-      const success = endX >= target.x && endX <= target.x + target.w;
-
-      state = 'walking';
-      player.walking = true;
-      player.toX = success
-        ? target.x + target.w - player.size
-        : endX - player.size;
-      player.success = success;
+    if(query === "") {
+        resultsDiv.innerHTML = "<strong>Please enter a search term.</strong>";
+        stepsDiv.style.display = "none";
+        return;
     }
-  } else if (state === 'walking') {
-    if (player.x < player.toX) {
-      player.x += player.speed * dt;
-    } else {
-      if (player.success) {
-        score++;
-        const dx = 50 - platforms[0].x;
-        platforms.forEach(p => p.x += dx);
-        stick.baseX += dx;
-        player.x += dx;
-        platforms.shift();
-        spawnNextPlatform();
-        stick.length = 0;
-        stick.angle = 0;
-        stick.baseX = platforms[0].x + platforms[0].w;
-        state = 'waiting';
-      } else {
-        state = 'stick-falling';
-        player.falling = true;
-        player.vy = 0;
-        failTimer = 0;
-      }
-    }
-  } else if (state === 'stick-falling') {
-    stick.angle += stick.rotateSpeed * dt;
-    failTimer += dt;
-    if (player.falling) {
-      player.vy += 500 * dt;
-      player.y += player.vy * dt;
-      if (player.y >= GROUND_Y && splashes.length === 0) {
-        createSplash(player.x + player.size / 2, GROUND_Y);
-      }
-    }
-    if (stick.angle >= Math.PI || failTimer > 1.5) {
-      state = 'falling';
-    }
-  } else if (state === 'falling') {
-    player.vy += 800 * dt;
-    player.y += player.vy * dt;
-    if (player.y > H + 50) {
-      init();
-    }
-  }
 
-  splashes.forEach(s => {
-    s.x += s.vx * dt;
-    s.y += s.vy * dt;
-    s.vy += 300 * dt;
-    s.alpha -= 1.5 * dt;
-  });
-  splashes = splashes.filter(s => s.alpha > 0);
+    // Simulated search result
+    resultsDiv.innerHTML = `
+        <h3>Results for "${query}":</h3>
+        <ul>
+            <li><a href="#">50% off ${query} - Limited Time Offer</a></li>
+            <li><a href="#">Buy 1 Get 1 Free - ${query}</a></li>
+            <li><a href="#">Exclusive Member Discount on ${query}</a></li>
+        </ul>
+    `;
+    stepsDiv.style.display = "block";
 }
-
-function createSplash(x, y) {
-  for (let i = 0; i < 8; i++) {
-    const angle = Math.random() * Math.PI;
-    const speed = 100 + Math.random() * 100;
-    splashes.push({
-      x,
-      y,
-      vx: Math.cos(angle) * speed,
-      vy: -Math.sin(angle) * speed,
-      alpha: 1
-    });
-  }
-}
-
-let lastTime = 0;
-function loop(t) {
-  if (!lastTime) lastTime = t;
-  const dt = (t - lastTime) / 1000;
-  dtGlobal = dt;
-  lastTime = t;
-
-  update(dt);
-  draw();
-
-  requestAnimationFrame(loop);
-}
-
-// Mouse controls
-window.addEventListener('mousedown', () => {
-  if (state === 'waiting') {
-    state = 'growing';
-  }
-});
-
-window.addEventListener('mouseup', () => {
-  if (state === 'growing') {
-    state = 'rotating';
-  }
-});
-
-// Touch controls (for mobile)
-window.addEventListener('touchstart', (e) => {
-  e.preventDefault();
-  if (state === 'waiting') {
-    state = 'growing';
-  }
-}, { passive: false });
-
-window.addEventListener('touchend', (e) => {
-  e.preventDefault();
-  if (state === 'growing') {
-    state = 'rotating';
-  }
-}, { passive: false });
-
-// Handle window resize
-window.addEventListener('resize', () => {
-  W = window.innerWidth;
-  H = window.innerHeight;
-  canvas.width = W;
-  canvas.height = H;
-  GROUND_Y = H * 0.75;
-});
-
-// Start the game
-init();
-requestAnimationFrame(loop);
 </script>
+
 </body>
 </html>
