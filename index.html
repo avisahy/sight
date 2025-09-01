@@ -6,79 +6,78 @@
 <title>Cheap Ticket Finder</title>
 <style>
     body {
-        font-family: Arial, sans-serif;
-        background: linear-gradient(to bottom, #f8f9fa, #e3f2fd);
         margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        background: url('https://images.unsplash.com/photo-1502920917128-1aa500764b8a') no-repeat center center fixed;
+        background-size: cover;
+        color: #fff;
     }
     header {
-        background-color: #1976d2;
-        color: white;
-        width: 100%;
+        background: rgba(0,0,0,0.6);
         padding: 20px;
         text-align: center;
-        font-size: 1.5em;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        font-size: 2em;
+        font-weight: bold;
+        letter-spacing: 1px;
     }
     main {
-        margin-top: 30px;
-        width: 90%;
-        max-width: 600px;
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        max-width: 700px;
+        margin: 40px auto;
+        background: rgba(255,255,255,0.9);
+        color: #333;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
     .search-box {
         display: flex;
         gap: 10px;
+        flex-wrap: wrap;
     }
     input[type="text"] {
         flex: 1;
-        padding: 10px;
+        padding: 12px;
         font-size: 1em;
         border: 1px solid #ccc;
-        border-radius: 4px;
+        border-radius: 6px;
     }
     button {
-        background-color: #1976d2;
+        background-color: #ff6f00;
         color: white;
         border: none;
-        padding: 10px 15px;
+        padding: 12px 20px;
         font-size: 1em;
-        border-radius: 4px;
+        border-radius: 6px;
         cursor: pointer;
+        transition: background 0.3s;
     }
     button:hover {
-        background-color: #1565c0;
+        background-color: #e65100;
     }
     .results {
         margin-top: 20px;
-        padding: 10px;
+        padding: 15px;
         background: #f1f8ff;
-        border-radius: 4px;
-        min-height: 100px;
+        border-radius: 6px;
+        min-height: 120px;
     }
     .steps {
         margin-top: 20px;
         background: #fff3cd;
-        padding: 10px;
-        border-radius: 4px;
+        padding: 15px;
+        border-radius: 6px;
         border: 1px solid #ffeeba;
     }
 </style>
 </head>
 <body>
 
-<header>🎟 Welcome to Cheap Ticket Finder</header>
+<header>🎟 Cheap Ticket Finder</header>
 
 <main>
-    <p>Find the best deals on tickets, sales, and discounts. Enter your search below:</p>
+    <p>Welcome! Search for flights, concerts, or events and find the best deals instantly.</p>
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="e.g., flight to Paris, concert tickets">
+        <input type="text" id="searchInput" placeholder="e.g., flight to Rome, Coldplay tickets">
         <button onclick="searchTickets()">Search</button>
     </div>
     <div class="results" id="resultsPreview">
@@ -96,7 +95,7 @@
 </main>
 
 <script>
-function searchTickets() {
+async function searchTickets() {
     const query = document.getElementById('searchInput').value.trim();
     const resultsDiv = document.getElementById('resultsPreview');
     const stepsDiv = document.getElementById('stepsGuide');
@@ -107,16 +106,48 @@ function searchTickets() {
         return;
     }
 
-    // Simulated search result
-    resultsDiv.innerHTML = `
-        <h3>Results for "${query}":</h3>
-        <ul>
-            <li><a href="#">50% off ${query} - Limited Time Offer</a></li>
-            <li><a href="#">Buy 1 Get 1 Free - ${query}</a></li>
-            <li><a href="#">Exclusive Member Discount on ${query}</a></li>
-        </ul>
-    `;
-    stepsDiv.style.display = "block";
+    resultsDiv.innerHTML = "<em>Searching for the best deals...</em>";
+
+    try {
+        // Example: Call your GPT‑5 / Deep Search API
+        // Replace with your actual API endpoint & key
+        /*
+        const aiResponse = await fetch("YOUR_GPT5_API_ENDPOINT", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer YOUR_API_KEY"
+            },
+            body: JSON.stringify({
+                query: `Find cheap tickets for: ${query}`,
+                engine: "gpt-5"
+            })
+        });
+        const aiData = await aiResponse.json();
+        */
+
+        // Example: Call a ticket search API (Skyscanner, Ticketmaster, etc.)
+        // Replace with your actual API call
+        /*
+        const ticketResponse = await fetch(`YOUR_TICKET_API_ENDPOINT?search=${encodeURIComponent(query)}`);
+        const ticketData = await ticketResponse.json();
+        */
+
+        // Simulated results for now:
+        resultsDiv.innerHTML = `
+            <h3>Results for "${query}":</h3>
+            <ul>
+                <li><a href="#">50% off ${query} - Limited Time Offer</a></li>
+                <li><a href="#">Buy 1 Get 1 Free - ${query}</a></li>
+                <li><a href="#">Exclusive Member Discount on ${query}</a></li>
+            </ul>
+        `;
+        stepsDiv.style.display = "block";
+
+    } catch (error) {
+        resultsDiv.innerHTML = "<strong>Error fetching results. Please try again later.</strong>";
+        stepsDiv.style.display = "none";
+    }
 }
 </script>
 
