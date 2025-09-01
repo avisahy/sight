@@ -1,155 +1,286 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cheap Ticket Finder</title>
-<style>
-    body {
-        margin: 0;
-        font-family: 'Segoe UI', Tahoma, sans-serif;
-        background: url('https://images.unsplash.com/photo-1502920917128-1aa500764b8a') no-repeat center center fixed;
-        background-size: cover;
-        color: #fff;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Israel Cheap Ticket Finder</title>
+  <style>
+    :root{
+      --bg1:#0d1b2a; --bg2:#1b263b; --card:#ffffff; --text:#1f2937;
+      --brand:#ff6f00; --brand-dark:#e65100; --muted:#6b7280; --chip:#eef2ff;
+      --ok:#0ea5e9; --accent:#06b6d4; --shadow:0 10px 30px rgba(0,0,0,.25);
     }
-    header {
-        background: rgba(0,0,0,0.6);
-        padding: 20px;
-        text-align: center;
-        font-size: 2em;
-        font-weight: bold;
-        letter-spacing: 1px;
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:#fff;
+      background:
+        linear-gradient(to bottom, rgba(13,27,42,.75), rgba(27,38,59,.9)),
+        url('https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=1600&auto=format&fit=crop') no-repeat center/cover fixed;
+      min-height:100vh;
     }
-    main {
-        max-width: 700px;
-        margin: 40px auto;
-        background: rgba(255,255,255,0.9);
-        color: #333;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    header{
+      padding:28px 20px;
+      text-align:center;
     }
-    .search-box {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
+    header h1{
+      margin:0 0 8px; font-size: clamp(28px, 3vw, 40px);
+      letter-spacing:.3px;
     }
-    input[type="text"] {
-        flex: 1;
-        padding: 12px;
-        font-size: 1em;
-        border: 1px solid #ccc;
-        border-radius: 6px;
+    header p{margin:0; color:#dbeafe}
+    main{
+      max-width:1100px; margin:24px auto 80px; padding:0 16px;
     }
-    button {
-        background-color: #ff6f00;
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        font-size: 1em;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: background 0.3s;
+    .panel{
+      background:rgba(255,255,255,.95); color:var(--text);
+      border-radius:16px; box-shadow:var(--shadow); padding:18px;
     }
-    button:hover {
-        background-color: #e65100;
+    .hero{
+      display:grid; gap:14px; grid-template-columns: 1fr auto;
+      align-items:center; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15);
+      padding:14px; border-radius:12px;
     }
-    .results {
-        margin-top: 20px;
-        padding: 15px;
-        background: #f1f8ff;
-        border-radius: 6px;
-        min-height: 120px;
+    .searchbar{
+      display:flex; gap:10px; flex-wrap:wrap;
     }
-    .steps {
-        margin-top: 20px;
-        background: #fff3cd;
-        padding: 15px;
-        border-radius: 6px;
-        border: 1px solid #ffeeba;
+    .searchbar input, .searchbar select{
+      flex:1; min-width:180px; padding:12px 14px; border-radius:10px; border:1px solid #e5e7eb;
+      font-size:15px; background:#fff; color:var(--text);
     }
-</style>
+    .cta{
+      background:var(--brand); color:#fff; border:none; border-radius:12px; padding:12px 18px;
+      font-weight:600; cursor:pointer; box-shadow:0 6px 20px rgba(255,111,0,.35); transition:.2s;
+    }
+    .cta:hover{background:var(--brand-dark); transform: translateY(-1px)}
+    .grid{
+      display:grid; gap:16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      margin-top:16px;
+    }
+    .card{
+      background:var(--card); border:1px solid #e5e7eb; border-radius:14px; overflow:hidden;
+      display:flex; flex-direction:column; transition:.2s;
+    }
+    .card:hover{transform: translateY(-2px); box-shadow:0 12px 30px rgba(2,6,23,.12)}
+    .thumb{height:150px; background:#f3f4f6; background-size:cover; background-position:center}
+    .body{padding:14px}
+    .title{font-weight:700; margin:0 0 6px}
+    .meta{color:#6b7280; font-size:13px}
+    .chips{margin-top:10px; display:flex; gap:6px; flex-wrap:wrap}
+    .chip{background:var(--chip); color:#3730a3; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600}
+    .actions{display:flex; gap:8px; padding:12px; border-top:1px solid #f1f5f9; background:#fafafa}
+    .btn{
+      flex:1; text-align:center; background:#0ea5e9; color:#fff; border:none; border-radius:10px; padding:10px 12px;
+      cursor:pointer; font-weight:600; transition:.15s;
+    }
+    .btn.secondary{background:#111827; color:#fff}
+    .btn:hover{filter:brightness(1.05)}
+    .tips{
+      margin-top:20px; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;
+    }
+    .tips header{background:#f8fafc; color:var(--text); padding:12px 14px; text-align:left}
+    .tips pre{white-space:pre-wrap; word-wrap:break-word; margin:0; padding:14px; color:#111827; background:#fff}
+    .toolbar{
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:12px 0 0;
+    }
+    .toolbar input, .toolbar select{padding:8px 10px; border-radius:8px; border:1px solid #e5e7eb; background:#fff}
+    .quick-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+    .quick{background:rgba(255,255,255,.9); color:#0f172a; border:1px solid #e5e7eb; padding:8px 12px; border-radius:999px; cursor:pointer; font-weight:600; font-size:13px}
+    .footer-note{color:#cbd5e1; font-size:13px; text-align:center; margin-top:16px}
+    .provider{
+      display:flex; gap:8px; align-items:center; background:rgba(255,255,255,.9); border:1px solid #e5e7eb; padding:10px; border-radius:12px;
+      margin-top:12px;
+    }
+    .provider label{font-size:13px; color:#475569}
+    .provider input{flex:1; padding:8px 10px; border-radius:8px; border:1px solid #e5e7eb}
+    .section-title{margin:18px 0 10px; color:#fff}
+  </style>
 </head>
 <body>
+  <header>
+    <h1>🎟️ Israel Cheap Ticket Finder</h1>
+    <p>Welcome! Find family-friendly deals on attractions, events, and trips — with AI tips to unlock extra savings.</p>
+  </header>
 
-<header>🎟 Cheap Ticket Finder</header>
+  <main>
+    <div class="panel">
+      <div class="hero">
+        <div class="searchbar">
+          <input id="q" type="text" placeholder="Try: Babylon Park, Safari Ramat Gan, Luna Park Tel Aviv, Eilat Underwater Observatory" />
+          <select id="city">
+            <option value="">All cities</option>
+            <option>Tel Aviv</option>
+            <option>Jerusalem</option>
+            <option>Haifa</option>
+            <option>Netanya</option>
+            <option>Rishon LeZion</option>
+            <option>Ramat Gan</option>
+            <option>Eilat</option>
+          </select>
+          <select id="cat">
+            <option value="">All categories</option>
+            <option value="kids">Kids & Family</option>
+            <option value="theme">Theme & Amusement</option>
+            <option value="zoo">Zoos & Aquariums</option>
+            <option value="museum">Museums & Science</option>
+            <option value="events">Events & Shows</option>
+          </select>
+        </div>
+        <button class="cta" id="go">Search deals</button>
+      </div>
 
-<main>
-    <p>Welcome! Search for flights, concerts, or events and find the best deals instantly.</p>
-    <div class="search-box">
-        <input type="text" id="searchInput" placeholder="e.g., flight to Rome, Coldplay tickets">
-        <button onclick="searchTickets()">Search</button>
+      <div class="toolbar">
+        <button class="quick" data-q="Babylon Park Netanya">Babylon Park</button>
+        <button class="quick" data-q="Safari Ramat Gan tickets">Safari Ramat Gan</button>
+        <button class="quick" data-q="Superland Rishon LeZion tickets">Superland</button>
+        <button class="quick" data-q="Luna Park Tel Aviv tickets">Luna Park</button>
+        <button class="quick" data-q="Eilat Underwater Observatory tickets">Underwater Observatory</button>
+        <button class="quick" data-q="Jerusalem Biblical Zoo tickets">Biblical Zoo</button>
+      </div>
+
+      <div class="provider">
+        <label>AI model name:</label>
+        <input id="modelName" placeholder="e.g., gpt-5, deepseek-chat, gpt-4.1, llama-3.1" />
+        <label>AI API key (stored in backend):</label>
+        <input id="apiKey" placeholder="leave blank if backend holds the key" />
+      </div>
+
+      <h3 class="section-title">Deals</h3>
+      <div class="grid" id="results"></div>
+
+      <div class="tips" id="tipsBox" style="display:none;">
+        <header><strong>AI discount playbook</strong></header>
+        <pre id="tipsText"></pre>
+      </div>
+
+      <div class="footer-note">Tip: search off-peak times, bundle family tickets, and compare member pricing.</div>
     </div>
-    <div class="results" id="resultsPreview">
-        <em>Your search results will appear here...</em>
-    </div>
-    <div class="steps" id="stepsGuide" style="display:none;">
-        <h3>How to Get Your Tickets:</h3>
-        <ol>
-            <li>Click on the deal link in the results.</li>
-            <li>Follow the booking instructions on the provider’s site.</li>
-            <li>Apply any promo codes listed.</li>
-            <li>Complete your purchase and enjoy your trip/event!</li>
-        </ol>
-    </div>
-</main>
+  </main>
 
-<script>
-async function searchTickets() {
-    const query = document.getElementById('searchInput').value.trim();
-    const resultsDiv = document.getElementById('resultsPreview');
-    const stepsDiv = document.getElementById('stepsGuide');
+  <script>
+    // Simple local catalog to guarantee Israel-focused results immediately.
+    const localCatalog = [
+      {
+        title: "Babylon Park (Netanya)",
+        city: "Netanya", cat:["kids","theme"],
+        url: "https://babylonpark.co.il/en/",
+        img: "https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=1200&auto=format&fit=crop",
+        notes: "Indoor arcade & rides. Load card/app for games and attractions.",
+        tags:["Indoor","Family","Arcade"]
+      },
+      { title:"Safari Ramat Gan", city:"Ramat Gan", cat:["kids","zoo"], url:"https://www.safari.co.il/en", img:"https://images.unsplash.com/photo-1508672019048-805c876b67e2?q=80&w=1200&auto=format&fit=crop", notes:"Drive-through safari + zoo; popular with kids.", tags:["Animals","All ages"]},
+      { title:"Superland (Rishon LeZion)", city:"Rishon LeZion", cat:["kids","theme"], url:"https://www.superland.co.il/", img:"https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1200&auto=format&fit=crop", notes:"Amusement park with family rides.", tags:["Theme Park"]},
+      { title:"Luna Park (Tel Aviv)", city:"Tel Aviv", cat:["kids","theme"], url:"https://www.lunapark.co.il/", img:"https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=1200&auto=format&fit=crop", notes:"Classic Tel Aviv amusement park.", tags:["Rides"]},
+      { title:"Jerusalem Biblical Zoo", city:"Jerusalem", cat:["kids","zoo"], url:"https://www.jerusalemzoo.org.il/en", img:"https://images.unsplash.com/photo-1546182990-dffeafbe841d?q=80&w=1200&auto=format&fit=crop", notes:"Spacious zoo with family facilities.", tags:["Animals"]},
+      { title:"Eilat Underwater Observatory", city:"Eilat", cat:["kids","zoo"], url:"https://coralworld.co.il/en", img:"https://images.unsplash.com/photo-1575844611398-2c0a70b4f6be?q=80&w=1200&auto=format&fit=crop", notes:"Aquarium & observatory; great for kids.", tags:["Aquarium","Sea"]},
+      { title:"Israel Aquarium (Jerusalem)", city:"Jerusalem", cat:["kids","zoo"], url:"https://www.israel-aquarium.org.il/en", img:"https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop", notes:"Aquarium near the zoo; time-slotted tickets.", tags:["Aquarium"]},
+      { title:"Madatech Science Museum (Haifa)", city:"Haifa", cat:["kids","museum"], url:"https://www.madatech.org.il/en", img:"https://images.unsplash.com/photo-1534759846116-5797cacff21b?q=80&w=1200&auto=format&fit=crop", notes:"Hands-on science exhibits for kids.", tags:["STEM"]}
+    ];
 
-    if(query === "") {
-        resultsDiv.innerHTML = "<strong>Please enter a search term.</strong>";
-        stepsDiv.style.display = "none";
-        return;
+    const resultsEl = document.getElementById('results');
+    const tipsBox = document.getElementById('tipsBox');
+    const tipsText = document.getElementById('tipsText');
+
+    function cardHTML(item){
+      return `
+        <article class="card">
+          <div class="thumb" style="background-image:url('${item.img}')"></div>
+          <div class="body">
+            <h4 class="title">${item.title}</h4>
+            <div class="meta">${item.city || ""}</div>
+            <p style="margin:8px 0 0">${item.notes || ""}</p>
+            <div class="chips">
+              ${(item.tags||[]).map(t=>`<span class="chip">${t}</span>`).join('')}
+            </div>
+          </div>
+          <div class="actions">
+            <a class="btn" href="${item.url}" target="_blank" rel="nofollow">View tickets</a>
+            <button class="btn secondary" onclick='getAITips(${JSON.stringify(item.title)})'>AI tips</button>
+          </div>
+        </article>
+      `;
     }
 
-    resultsDiv.innerHTML = "<em>Searching for the best deals...</em>";
+    function render(items){
+      resultsEl.innerHTML = items.map(cardHTML).join('') || `<div class="panel">No results. Try another city or category.</div>`;
+    }
 
-    try {
-        // Example: Call your GPT‑5 / Deep Search API
-        // Replace with your actual API endpoint & key
-        /*
-        const aiResponse = await fetch("YOUR_GPT5_API_ENDPOINT", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer YOUR_API_KEY"
-            },
-            body: JSON.stringify({
-                query: `Find cheap tickets for: ${query}`,
-                engine: "gpt-5"
-            })
+    function filterLocal(query, city, cat){
+      const q = (query||"").toLowerCase();
+      return localCatalog.filter(x=>{
+        const matchQ = !q || x.title.toLowerCase().includes(q) || (x.notes||"").toLowerCase().includes(q);
+        const matchC = !city || x.city === city;
+        const matchCat = !cat || (x.cat||[]).includes(cat);
+        return matchQ && matchC && matchCat;
+      });
+    }
+
+    async function search(){
+      const query = document.getElementById('q').value.trim();
+      const city = document.getElementById('city').value.trim();
+      const cat = document.getElementById('cat').value.trim();
+
+      // Always show strong local matches first.
+      const base = filterLocal(query, city, cat);
+
+      render(base);
+
+      // Try to enrich with backend search if available.
+      try{
+        const res = await fetch('/api/search?q='+encodeURIComponent(query)+'&city='+encodeURIComponent(city)+'&cat='+encodeURIComponent(cat));
+        if(res.ok){
+          const more = await res.json(); // expecting array of {title, city, url, img, notes, tags[]}
+          const merged = dedupe([...base, ...more], x => x.url || x.title);
+          render(merged);
+        }
+      }catch(e){/*silent enrichment fail*/}
+
+      // Optionally auto-suggest AI tips for explicit queries
+      if(query){
+        getAITips(query);
+      }
+    }
+
+    function dedupe(arr, keyFn){
+      const map = new Map();
+      arr.forEach(it=> map.set(keyFn(it), it));
+      return [...map.values()];
+    }
+
+    async function getAITips(topic){
+      tipsBox.style.display = 'block';
+      tipsText.textContent = "Thinking of smart ways to save...";
+      try{
+        const model = document.getElementById('modelName').value.trim() || "gpt-4.1";
+        const key = document.getElementById('apiKey').value.trim();
+        const res = await fetch('/api/ai-tips', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            model, key,
+            topic,
+            context: "Israel; family discounts; memberships; off-peak pricing; bundle/family packages; coupon stacking; local cards"
+          })
         });
-        const aiData = await aiResponse.json();
-        */
-
-        // Example: Call a ticket search API (Skyscanner, Ticketmaster, etc.)
-        // Replace with your actual API call
-        /*
-        const ticketResponse = await fetch(`YOUR_TICKET_API_ENDPOINT?search=${encodeURIComponent(query)}`);
-        const ticketData = await ticketResponse.json();
-        */
-
-        // Simulated results for now:
-        resultsDiv.innerHTML = `
-            <h3>Results for "${query}":</h3>
-            <ul>
-                <li><a href="#">50% off ${query} - Limited Time Offer</a></li>
-                <li><a href="#">Buy 1 Get 1 Free - ${query}</a></li>
-                <li><a href="#">Exclusive Member Discount on ${query}</a></li>
-            </ul>
-        `;
-        stepsDiv.style.display = "block";
-
-    } catch (error) {
-        resultsDiv.innerHTML = "<strong>Error fetching results. Please try again later.</strong>";
-        stepsDiv.style.display = "none";
+        if(res.ok){
+          const data = await res.json();
+          tipsText.textContent = data.text || "No tips found.";
+        }else{
+          tipsText.textContent = "Could not fetch AI tips right now.";
+        }
+      }catch(e){
+        tipsText.textContent = "Could not fetch AI tips.";
+      }
     }
-}
-</script>
 
+    document.getElementById('go').addEventListener('click', search);
+    document.querySelectorAll('.quick').forEach(b=> b.addEventListener('click', ()=>{
+      document.getElementById('q').value = b.dataset.q;
+      search();
+    }));
+
+    // Initial render: Israel family picks
+    render(filterLocal("", "", "kids"));
+  </script>
 </body>
 </html>
